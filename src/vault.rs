@@ -49,7 +49,7 @@ pub fn add_file(vault: &str, file: &str){
         return;
     } 
     let file = fs::copy(file, diretory.join(file)).expect("Falha ao copiar arquivo para o cofre");
-    
+
     
     println!("Adicionando arquivo {:?} ao cofre {}", file, vault);
 }
@@ -66,11 +66,13 @@ pub fn read_directory(directory: &str) -> Vec<String> {
             if let Some(name) = entry.file_name().to_str() {
                 files.push(name.to_string());
             } 
-             _counter += 1;
-
+              _counter += 1;
         }
+        println!("contagem de arquivos totais: {}", _counter);
+        if _counter == 0 {
+            eprintln!("Erro ao ler diretório/arquivos totais: {}", directory);
+      }
     }
-
     files
 }
 
