@@ -65,8 +65,8 @@ pub fn read_directory(directory: &str) -> Vec<String> {
         if entry.file_type().unwrap().is_file() {
             if let Some(name) = entry.file_name().to_str() {
                 files.push(name.to_string());
-            } 
-              _counter += 1;
+                _counter += 1;
+            }           
         }
         println!("contagem de arquivos totais: {}", _counter);
         if _counter == 0 {
