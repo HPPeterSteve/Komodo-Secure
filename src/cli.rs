@@ -1,11 +1,12 @@
 use std::env;
 
+#[allow(dead_code)]
 pub struct Args {
     pub command: String,
     pub path: String,
     pub file: String,
 }
-
+#[allow(dead_code)]
 pub fn get_args() -> Args {
 
     let args: Vec<String> = env::args().collect();
