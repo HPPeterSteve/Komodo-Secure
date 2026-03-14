@@ -47,7 +47,9 @@ pub fn add_file(vault: &str, file: &str){
     if !diretory.exists() {
         eprintln!("Cofre não encontrado: {}", vault);
         return;
-    }
+    } 
+    let file = fs::copy(file, diretory.join(file)).expect("Falha ao copiar arquivo para o cofre");
+    
     
     println!("Adicionando arquivo {:?} ao cofre {}", file, vault);
 }
@@ -57,12 +59,15 @@ pub fn add_file(vault: &str, file: &str){
 // precisamos garantir que os arquivos estão dentro do diretorio.
 pub fn read_directory(directory: &str) -> Vec<String> {
     let mut files = Vec::new();
+    let mut _counter  = 0;
 
     for entry in std::fs::read_dir(directory).unwrap().flatten() {
         if entry.file_type().unwrap().is_file() {
             if let Some(name) = entry.file_name().to_str() {
                 files.push(name.to_string());
-            }
+            } 
+             _counter += 1;
+
         }
     }
 
