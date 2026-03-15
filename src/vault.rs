@@ -68,6 +68,8 @@ pub fn read_directory(directory: &str) -> Vec<String> {
                 _counter += 1;
             }           
         }
+        // _counter += 1;
+        // o contador melhora a experiência do usuário.
         println!("contagem de arquivos totais: {}", _counter);
         if _counter == 0 {
             eprintln!("Erro ao ler diretório/arquivos totais: {}", directory);
@@ -87,14 +89,15 @@ pub fn isolate_directory(directory: &str) {
         std::fs::create_dir_all(SANDBOX_DIR).expect("Failed to create sandbox directory");
     }
     let full_path = dir_sandbox.join(directory);
-    if !full_path.exists() {
+        if !full_path.exists() {
         std::fs::create_dir_all(&full_path).expect("Failed to create sandbox subdirectory");
-    }
-    println!("Isolando diretório {}", directory);
-    println!("Arquivos encontrados:");
-    for file in files {
-        println!(" - {}", file);
-    } 
+         }
+           println!("Isolando diretório {}", directory);
+           println!("Arquivos encontrados:");
+
+             for file in files {
+             println!(" - {}", file);
+         } 
     let mut permission = fs::metadata(directory).expect("Failed to get metadata").permissions();
     permission.set_readonly(true);
     fs::set_permissions(directory, permission).expect("Failure permission");

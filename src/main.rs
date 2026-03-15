@@ -7,8 +7,11 @@ fn main() {
     loop {
         println!("Digite um comando (ou 'exit' para sair):
         comandos existentes:
-        create-vault <path>
-        add-file <vault> <file> ");
+        create-vault and file path  
+        add-file <vault> <file>
+        allow-write: <file>
+        read-directory: <directory>
+        ");
         let mut input = String::new();
         std::io::stdin().read_line(&mut input).unwrap();
         let input = input.trim();
@@ -37,7 +40,25 @@ fn main() {
                     println!("Faltam argumentos para add-file!");
                 }
             }
-            _ => cli::help(),
+            "allow-write" => {
+                if let Some(path) = parts.get(1) {
+                    vault::allow_write(path);
+                } else {
+                    println!("Falta o caminho do arquivo!");
+                }
+            }
+            "read-directory" => {
+                if let Some(directory) = parts.get(1) {
+                    let files = vault::read_directory(directory);
+                    println!("Arquivos no diretório {}: {:?}", directory, files);
+                } else {
+                    println!("Falta o caminho do diretório!");
+                }
+            }
+            _ => {
+                println!("Comando desconhecido: {}", parts[0]);
+                cli::questions(parts[0]);
+            }
+            }
         }
     }
-}
