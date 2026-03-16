@@ -5,7 +5,11 @@ Cli tool created and writted in Rust
 
 ## Download
 
-[Windows](https://github.com/usuario/solo_sec/releases)
+### Windows
+
+[Baixar Solo Secure v0.02](https://github.com/HPPeterSteve/Solo-Secure/raw/main/Exe_files/Solo_sec_v0.02.exe)
+
+[Baixar Solo Secure v0.01](https://github.com/HPPeterSteve/Solo-Secure/raw/main/Exe_files/Solo_sec_v0.01.exe)
 
 ## Compilar
 
