@@ -1,4 +1,4 @@
-use std::{fs::{self, OpenOptions}, path::Path};
+use std::{fs::{self,/*metadata, */ OpenOptions}, path::Path};
 #[warn(dead_code)]
 use std::env;
 #[allow(dead_code)]
@@ -8,10 +8,11 @@ use std::io::Write;
 // diretamente ao main, e isso é intencional, pois o código é modularizado para facilitar a manutenção e a organização,
 // é má pratica escrever codigo que não seja orquestrado diretamente na main de arquivos únicos.
 #[allow(dead_code)]
-pub struct Args {
+pub  struct Args {
     pub command: String,
     pub path: String,
     pub file: String,
+    
 } 
 #[allow(dead_code)]
 // A função get_args é responsável por coletar os argumentos de linha de comando fornecidos pelo usuário.
@@ -124,6 +125,17 @@ pub fn allow_write(path: &str) {
      .open(&file_exists)
      .expect("Falha ao abrir arquivo para escrita");
      writeln!(_file, "Permissão de escrita concedida para {}", path).expect("Falha ao escrever no arquivo");
+}
+pub fn delete_sandbox<P: AsRef<Path>>(directory: P) -> std::result::Result<(), std::io::Error> {
+    let counter: i32 = 0;
+    let info_files = directory.as_ref();
+    if info_files.exists() && (info_files).is_dir() {
+        std::fs::remove_dir_all(info_files)?;
+        println!("Sandbox deletada com sucesso: {}", info_files.display());
+    } else {
+        eprintln!("Sandbox não encontrada ou não é um diretório: {}", info_files.display());
+    }  
+    Ok(())
 }
 
 pub fn help() {
