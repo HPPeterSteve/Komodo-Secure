@@ -1,12 +1,13 @@
 [package]
 name = "Solo_sec"
-version = "0.1.0"
-edition = "2024"
+version = "0.0.2"
+edition = "2026"
 
 
 [dependencies]
-clap = "4.5"
+clap = "4.6.0"
 sha2 = "0.10"
 regex = "1"
 walkdir = "2"
 io = "0.0.2"
+colored = "3.1.1"

@@ -37,7 +37,7 @@ fn main() {
 
         match parts[0] {
             "create-vault" => {
-                if let Some(path) = parts.get(1) {
+                if let Some(&path) = parts.get(1) {
                     vault::create(path);
                 } else {
                     println!("Falta o caminho do cofre!");

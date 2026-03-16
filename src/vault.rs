@@ -43,9 +43,12 @@ pub fn create(dir: &str) {
     if let Err(e) = std::fs::create_dir_all(dir) {
         eprintln!("Erro ao criar cofre: {}", e);
         return;
+    } else {
+         let path_not_specified = "C:/Users/Pedro/Desktop/Solo_SEC/sandbox/default_vault";
+         println!("Cofre criado com sucesso em {}", dir);
     }
     println!("Criando cofre em {}", dir);
-}
+   }
 
 pub fn add_file(vault: &str, file: &str) {
     let diretory = std::path::Path::new(vault);
@@ -88,13 +91,16 @@ const SANDBOX_DIR: &str = "C:/Users/Pedro/Desktop/Solo_SEC/sandbox";
 pub fn isolate_directory(directory: &str) {
     let files = read_directory(directory);
     let dir_sandbox = Path::new(SANDBOX_DIR);
+
     if !dir_sandbox.exists() {
         std::fs::create_dir_all(SANDBOX_DIR).expect("Failed to create sandbox directory");
     }
+
     let full_path = dir_sandbox.join(directory);
     if !full_path.exists() {
         std::fs::create_dir_all(&full_path).expect("Failed to create sandbox subdirectory");
     }
+
     println!("Isolando diretório {}", directory);
     println!("Arquivos encontrados:");
 
