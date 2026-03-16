@@ -1,17 +1,27 @@
+use crate::cli::questions;
+
 mod cli;
-mod vault;
 mod immutable;
 mod usb_key;
+mod vault;
 
 fn main() {
     loop {
-        println!("Digite um comando (ou 'exit' para sair):
+        println!(
+            "
+        Solo-Sec v0.02 Beta
+        Modules: 6
+        Commands: 4
+
+
+        Digite um comando (ou 'exit' para sair):
         comandos existentes:
-        create-vault and file path  
-        add-file <vault> <file>
-        allow-write: <file>
-        read-directory: <directory>
-        ");
+        create-vault  
+        add-file 
+        allow-write
+        read-directory
+        "
+        );
         let mut input = String::new();
         std::io::stdin().read_line(&mut input).unwrap();
         let input = input.trim();
@@ -55,10 +65,27 @@ fn main() {
                     println!("Falta o caminho do diretório!");
                 }
             }
+            "questions" => {
+                println!("Digite o número da pergunta para obter a resposta:");
+
+                if let Some(answer) = parts.get(1) {
+                    cli::questions(answer);
+                } else {
+                    let mut input = String::new();
+
+                    std::io::stdin()
+                        .read_line(&mut input)
+                        .expect("erro ao ler entrada");
+
+                    let answer = input.trim();
+                    cli::questions(answer);
+                }
+            }
+
             _ => {
                 println!("Comando desconhecido: {}", parts[0]);
-                cli::questions(parts[0]);
-            }
+                println!("Digite 'questions' para ver ajuda.");
             }
         }
     }
+}
