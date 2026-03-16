@@ -126,12 +126,15 @@ pub fn allow_write(path: &str) {
      .expect("Falha ao abrir arquivo para escrita");
      writeln!(_file, "Permissão de escrita concedida para {}", path).expect("Falha ao escrever no arquivo");
 }
+#[allow(dead_code)]
 pub fn delete_sandbox<P: AsRef<Path>>(directory: P) -> std::result::Result<(), std::io::Error> {
-    let counter: i32 = 0;
     let info_files = directory.as_ref();
     if info_files.exists() && (info_files).is_dir() {
         std::fs::remove_dir_all(info_files)?;
         println!("Sandbox deletada com sucesso: {}", info_files.display());
+         {
+        eprintln!("Não foi possivel deletar diretório: {}", info_files.display());
+        }
     } else {
         eprintln!("Sandbox não encontrada ou não é um diretório: {}", info_files.display());
     }  
