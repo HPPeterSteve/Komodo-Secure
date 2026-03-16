@@ -44,7 +44,7 @@ pub fn create(dir: &str) {
         eprintln!("Erro ao criar cofre: {}", e);
         return;
     } else {
-         let path_not_specified = "C:/Users/Pedro/Desktop/Solo_SEC/sandbox/default_vault";
+         let _path_not_specified = "C:/Users/Pedro/Desktop/Solo_SEC/sandbox/default_vault";
          println!("Cofre criado com sucesso em {}", dir);
     }
     println!("Criando cofre em {}", dir);
