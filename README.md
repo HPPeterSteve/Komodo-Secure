@@ -1,6 +1,6 @@
 # Solo_secure
 
-Cli tool created and writted in Rust 
+Cli tool created and written in Rust 
 
 
 ## Download
