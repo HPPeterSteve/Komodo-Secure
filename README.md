@@ -1,21 +1,16 @@
-# Solo_secure
+# Solo Secure
 
-Cli tool created and written in Rust 
-
+CLI tool for file protection, written in Rust.
 
 ## Download
 
-### Windows 10-11 x64/86
-Terceira versão (alpha)
-[Baixar Solo Secure v0.03](https://github.com/HPPeterSteve/Solo-Secure/raw/main/Exe_files/Solo_sec_v0.03alpha.exe)
+### Windows (10/11 x64/x86)
 
-Segunda versão experimental
-[Baixar Solo Secure v0.02](https://github.com/HPPeterSteve/Solo-Secure/raw/main/Exe_files/Solo_sec_v0.02.exe)
+- [v0.03 Alpha](https://github.com/HPPeterSteve/Solo-Secure/raw/main/Exe_files/Solo_sec_v0.03.exe)
+- [v0.02 Experimental](https://github.com/HPPeterSteve/Solo-Secure/raw/main/Exe_files/Solo_sec_v0.02.exe)
+- [v0.01 Experimental](https://github.com/HPPeterSteve/Solo-Secure/raw/main/Exe_files/Solo_sec_v0.01.exe)
 
-Primeira versão experimental
-[Baixar Solo Secure v0.01](https://github.com/HPPeterSteve/Solo-Secure/raw/main/Exe_files/Solo_sec_v0.01.exe)
-
-## Compilar
+## Build from source
 
 ```bash
 cargo build --release
