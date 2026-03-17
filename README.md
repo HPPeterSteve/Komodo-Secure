@@ -147,5 +147,5 @@ Contributions, ideas, and feedback are welcome.
 
 ## 📄 License
 
-To be defined.
+MIT License
 
