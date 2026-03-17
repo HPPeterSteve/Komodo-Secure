@@ -53,7 +53,10 @@ fn main() {
             }
             "add-file" => {
                 if let (Some(vault), Some(file)) = (parts.get(1), parts.get(2)) {
-                    vault::safe_copy(vault, file);
+                    let result = vault::safe_copy(vault, file);
+                    if let Err(e) = result {
+                        eprintln!("Erro ao adicionar arquivo: {}", e);
+                    }
                 } else {
                     println!("Faltam argumentos para add-file!");
                 }
