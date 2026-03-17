@@ -82,9 +82,8 @@ pub fn safe_copy<P: AsRef<Path>>(src: P, dstn: P) -> core::result::Result<(), Bo
             break;
         }
         writer.write_all(&buffer[..bytes_read])?;
-    }
-    
-    writer.flush()?;
+        
+    } writer.flush()?;
 
     fs::rename(&temporary_path, destination_path)?;
     Ok(())
