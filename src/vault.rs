@@ -75,14 +75,14 @@ pub fn safe_copy<P: AsRef<Path>>(src: P, dstn: P) -> core::result::Result<(), Bo
     let temporary_file = fs::File::create(&temporary_path)?;
     let mut writer = BufWriter::new(temporary_file);
     // vai até o ultimo byte
-    let mut buffer = [0u8; 8192];
+    let mut buffer = [0u8; 65536];
     loop {
         let bytes_read = origin_file.read(&mut buffer)?;
         if bytes_read == 0 {
             break;
         }
         writer.write_all(&buffer[..bytes_read])?;
-        
+
     } writer.flush()?;
 
     fs::rename(&temporary_path, destination_path)?;
