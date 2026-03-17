@@ -7,7 +7,7 @@ Cli tool created and writted in Rust
 
 ### Windows 10-11 x64/86
 Terceira versão (alpha)
-[Baixar Solo Secure v0.03](https://github.com/HPPeterSteve/Solo-Secure/raw/main/Exe_files/Solo_sec_v0.03.exe)
+[Baixar Solo Secure v0.03](https://github.com/HPPeterSteve/Solo-Secure/raw/main/Exe_files/Solo_sec_v0.03alpha.exe)
 
 Segunda versão experimental
 [Baixar Solo Secure v0.02](https://github.com/HPPeterSteve/Solo-Secure/raw/main/Exe_files/Solo_sec_v0.02.exe)
