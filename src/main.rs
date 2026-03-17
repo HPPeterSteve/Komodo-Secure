@@ -8,7 +8,7 @@ fn main() {
     loop {
         println!(
             "
-        Solo-Sec v0.02 Beta
+        Solo-Sec v0.03 Alpha
         Modules: 6
         Commands: 4
 
@@ -19,6 +19,8 @@ fn main() {
         add-file 
         allow-write
         read-directory
+        isolate-directory
+        help
         "
         );
         let mut input = String::new();
@@ -35,6 +37,13 @@ fn main() {
         }
 
         match parts[0] {
+            "isolate-directory" => {
+                if let Some(directory) = parts.get(1) {
+                    vault::isolate_directory(directory);
+                } else {
+                    println!("Falta o caminho do diretório!");
+                }
+            }
             "create-vault" => {
                 if let Some(&path) = parts.get(1) {
                     vault::create(path);
@@ -44,7 +53,7 @@ fn main() {
             }
             "add-file" => {
                 if let (Some(vault), Some(file)) = (parts.get(1), parts.get(2)) {
-                    vault::add_file(vault, file);
+                    vault::safe_copy(vault, file);
                 } else {
                     println!("Faltam argumentos para add-file!");
                 }
@@ -64,7 +73,7 @@ fn main() {
                     println!("Falta o caminho do diretório!");
                 }
             }
-            "questions" => {
+            "help" => {
                 println!("Digite o número da pergunta para obter a resposta:");
 
                 if let Some(answer) = parts.get(1) {

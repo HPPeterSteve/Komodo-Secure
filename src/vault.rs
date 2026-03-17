@@ -3,9 +3,11 @@ use std::env;
 #[allow(dead_code)]
 use std::io::Write;
 use std::{
-    fs::{self, /*metadata, */ OpenOptions},
-    path::Path,
+    fs::{self, /*metadata, */ OpenOptions}, io::BufReader, io::BufWriter, path::Path, 
 };
+use std::io::Read;
+
+
 
 // é usado #[allow(dead_code)] para mitigar avisos de codigo não utilizado, tudo será orquestrado
 // diretamente ao main, e isso é intencional, pois o código é modularizado para facilitar a manutenção e a organização,
@@ -49,7 +51,7 @@ pub fn create(dir: &str) {
     }
     println!("Criando cofre em {}", dir);
    }
-
+/*
 pub fn add_file(vault: &str, file: &str) {
     let diretory = std::path::Path::new(vault);
     if !diretory.exists() {
@@ -57,8 +59,35 @@ pub fn add_file(vault: &str, file: &str) {
         return;
     }
     let file = fs::copy(file, diretory.join(file)).expect("Falha ao copiar arquivo para o cofre");
-
+    
     println!("Adicionando arquivo {:?} ao cofre {}", file, vault);
+}
+*/
+pub fn safe_copy<P: AsRef<Path>>(src: P, dstn: P) -> core::result::Result<(), Box<dyn std::error::Error>> {
+    let source_path = src.as_ref();
+    let destination_path = dstn.as_ref();
+
+    let temporary_path = destination_path.with_extension("tmp_copy");
+
+    let source_file = fs::File::open(source_path)?;
+    let mut origin_file = BufReader::new(source_file);
+
+    let temporary_file = fs::File::create(&temporary_path)?;
+    let mut writer = BufWriter::new(temporary_file);
+    // vai até o ultimo byte
+    let mut buffer = [0u8; 8192];
+    loop {
+        let bytes_read = origin_file.read(&mut buffer)?;
+        if bytes_read == 0 {
+            break;
+        }
+        writer.write_all(&buffer[..bytes_read])?;
+    }
+    
+    writer.flush()?;
+
+    fs::rename(&temporary_path, destination_path)?;
+    Ok(())
 }
 
 #[allow(dead_code)]
