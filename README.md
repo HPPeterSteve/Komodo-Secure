@@ -1,9 +1,49 @@
 # Solo Secure
+## Download
+### Windows (10/11 x64/x86)
+
+- [v0.03 Alpha](https://github.com/HPPeterSteve/Solo-Secure/raw/main/Exe_files/Solo_sec_v0.03.exe)
+- [v0.02 Experimental](https://github.com/HPPeterSteve/Solo-Secure/raw/main/Exe_files/Solo_sec_v0.02.exe)
+- [v0.01 Experimental](https://github.com/HPPeterSteve/Solo-Secure/raw/main/Exe_files/Solo_sec_v0.01.exe)
+
+
 
 CLI tool for file protection, written in Rust.
+## 🤝 Contributing
 
-## Download
+Contributions are welcome — especially from developers interested in Rust, systems programming, and security.
 
+If you'd like to contribute:
+
+* Fork the repository
+* Create a branch (`feature/your-feature` or `fix/your-fix`)
+* Keep the code clean, simple, and well-structured
+* Add comments only when necessary (avoid noise)
+* Open a Pull Request with a clear explanation of what was done
+
+---
+
+### 🔍 Areas for Contribution
+
+This project is evolving, and help is especially welcome in:
+
+* Security improvements (file integrity, stronger protection mechanisms)
+* CLI usability and argument parsing
+* Performance optimization
+* Error handling and logging
+* Cross-platform support (Linux/macOS)
+
+---
+
+### ⚠️ Notes
+
+* This project is in **alpha stage** — breaking changes may occur
+* Focus on clarity and simplicity over complexity
+* Every contribution, even small ones, is valuable
+
+---
+
+Build something solid.
 
 ## Build from source
 
@@ -44,17 +84,6 @@ The tool provides mechanisms to:
 
 * Rust
 * Standard Library (`std::fs`, `std::env`, etc.)
-
----
-
-## 📦 Installation
-
-### Windows (10/11 x64/x86)
-
-- [v0.03 Alpha](https://github.com/HPPeterSteve/Solo-Secure/raw/main/Exe_files/Solo_sec_v0.03.exe)
-- [v0.02 Experimental](https://github.com/HPPeterSteve/Solo-Secure/raw/main/Exe_files/Solo_sec_v0.02.exe)
-- [v0.01 Experimental](https://github.com/HPPeterSteve/Solo-Secure/raw/main/Exe_files/Solo_sec_v0.01.exe)
-
 
 ---
 
