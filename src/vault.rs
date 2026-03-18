@@ -3,7 +3,7 @@ use std::env;
 #[allow(dead_code)]
 use std::io::Write;
 use std::{
-    fs::{self, /*metadata, */ OpenOptions}, io::BufReader, io::BufWriter, path::Path, 
+    fs::{self, /*metadata, */ OpenOptions}, io::BufReader, io::BufWriter, path::Path, path::PathBuf,
 };
 use std::io::Read;
 
@@ -51,17 +51,46 @@ pub fn create(dir: &str) {
     }
     println!("Criando cofre em {}", dir);
    }
+#[allow(dead_code)]   
+pub fn add_file(vault: &str, file: &str) -> Result<(), Box<dyn std::error::Error>> {
+    let vault_path = Path::new(vault);
+    let file_path = Path::new(file);
 
-pub fn add_file(vault: &str, file: &str) {
-    let diretory = std::path::Path::new(vault);
-    if !diretory.exists() {
+    // validações básicas
+    if !vault_path.exists() {
         eprintln!("Cofre não encontrado: {}", vault);
-        return;
+        return Ok(());
     }
-    let file = fs::copy(file, diretory.join(file)).expect("Falha ao copiar arquivo para o cofre");
-    
-    println!("Adicionando arquivo {:?} ao cofre {}", file, vault);
+
+    if !file_path.exists() || !file_path.is_file() {
+        eprintln!("Arquivo inválido: {}", file);
+        return Ok(());
+    }
+
+    // pega só o nome do arquivo (segurança)
+    let file_name = file_path
+        .file_name()
+        .ok_or("Falha ao obter nome do arquivo")?;
+
+    let destination: PathBuf = vault_path.join(file_name);
+
+    // evita sobrescrever sem querer
+    if destination.exists() {
+        eprintln!("Arquivo já existe no cofre: {}", destination.display());
+        return Ok(());
+    }
+
+    let bytes = fs::copy(file_path, &destination)?;
+
+    println!(
+        "Arquivo adicionado ao cofre: {}\nBytes copiados: {}",
+        destination.display(),
+        bytes
+    );
+
+    Ok(())
 }
+
 #[allow(dead_code)]
 pub fn safe_copy<P: AsRef<Path>>(src: P, dstn: P) -> core::result::Result<(), Box<dyn std::error::Error>> {
     let source_path = src.as_ref();

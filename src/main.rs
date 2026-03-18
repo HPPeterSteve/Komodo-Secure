@@ -1,100 +1,147 @@
-
 mod cli;
-mod immutable;
-mod usb_key;
 mod vault;
 
-fn main() {
-    loop {
-        println!(
-            "
-        Solo-Sec v0.03 
-        Modules: 6
-        Commands: 4
+use colored::*;
+use rustyline::DefaultEditor;
 
-
-        Digite um comando (ou 'exit' para sair):
-        comandos existentes:
-        create-vault  
-        add-file 
-        allow-write
-        read-directory
-        isolate-directory
-        help
+fn show_help() {
+    println!(
+        "{}",
         "
-        );
-        let mut input = String::new();
-        std::io::stdin().read_line(&mut input).unwrap();
-        let input = input.trim();
+Comandos disponíveis:
 
-        if input == "exit" {
-            break;
+create-vault <path>        → cria um cofre
+add-file <vault> <file>    → adiciona arquivo ao cofre
+safe-copy <src> <dst>      → copia com segurança
+allow-write <file>         → libera escrita
+read-directory <dir>       → lista arquivos
+isolate-directory <dir>    → isola diretório
+help                       → ajuda
+exit                       → sair
+"
+        .cyan()
+    );
+}
+
+fn handle_command(parts: Vec<&str>) {
+    match parts[0] {
+        "isolate-directory" => {
+            if let Some(dir) = parts.get(1) {
+                vault::isolate_directory(dir);
+                println!("{}", "✔ Diretório isolado".green());
+            } else {
+                println!("{}", "Uso: isolate-directory <dir>".yellow());
+            }
         }
 
-        let parts: Vec<&str> = input.split_whitespace().collect();
-        if parts.is_empty() {
-            continue;
+        "create-vault" => {
+            if let Some(path) = parts.get(1) {
+                vault::create(path);
+                println!("{}", "✔ Cofre criado".green());
+            } else {
+                println!("{}", "Uso: create-vault <path>".yellow());
+            }
         }
 
-        match parts[0] {
-            "isolate-directory" => {
-                if let Some(directory) = parts.get(1) {
-                    vault::isolate_directory(directory);
-                } else {
-                    println!("Falta o caminho do diretório!");
+        "safe-copy" => {
+            if let (Some(src), Some(dst)) = (parts.get(1), parts.get(2)) {
+                match vault::safe_copy(src, dst) {
+                    Ok(_) => println!("{}", "✔ Arquivo copiado".green()),
+                    Err(e) => eprintln!("{}", format!("✖ Erro: {}", e).red()),
                 }
+            } else {
+                println!("{}", "Uso: safe-copy <src> <dst>".yellow());
             }
-            "create-vault" => {
-                if let Some(&path) = parts.get(1) {
-                    vault::create(path);
-                } else {
-                    println!("Falta o caminho do cofre!");
-                }
-            }
-            "add-file" => {
-                if let (Some(vault), Some(file)) = (parts.get(1), parts.get(2)) {
-                    vault::add_file(vault, file);
-                } else {
-                    println!("Faltam argumentos para add-file!");
-                }
-            }
-            "allow-write" => {
-                if let Some(path) = parts.get(1) {
-                    vault::allow_write(path);
-                } else {
-                    println!("Falta o caminho do arquivo!");
-                }
-            }
-             
-            "read-directory" => {
-                if let Some(directory) = parts.get(1) {
-                    let files = vault::read_directory(directory);
-                    println!("Arquivos no diretório {}: {:?}", directory, files);
-                } else {
-                    println!("Falta o caminho do diretório!");
-                }
-            }
-            
-            "help" => {
-                println!("Digite o número da pergunta para obter a resposta:");
+        }
 
-                if let Some(answer) = parts.get(1) {
-                    cli::questions(answer);
-                } else {
-                    let mut input = String::new();
+        "allow-write" => {
+            if let Some(path) = parts.get(1) {
+                vault::allow_write(path);
+                println!("{}", "✔ Escrita liberada".green());
+            } else {
+                println!("{}", "Uso: allow-write <file>".yellow());
+            }
+        }
 
-                    std::io::stdin()
-                        .read_line(&mut input)
-                        .expect("erro ao ler entrada");
+        "read-directory" => {
+            if let Some(dir) = parts.get(1) {
+                let files = vault::read_directory(dir);
 
-                    let answer = input.trim();
-                    cli::questions(answer);
+                println!("{}", format!("📁 {}:", dir).blue());
+                for f in files {
+                    println!("  {}", format!("• {}", f).white());
                 }
+            } else {
+                println!("{}", "Uso: read-directory <dir>".yellow());
+            }
+        }
+
+        "add-file" => {
+            if let (Some(vault_path), Some(file)) = (parts.get(1), parts.get(2)) {
+                match vault::add_file(vault_path, file) {
+                    Ok(_) => println!("{}", "✔ Arquivo adicionado".green()),
+                    Err(e) => eprintln!("{}", format!("✖ Erro: {}", e).red()),
+                }
+            } else {
+                println!("{}", "Uso: add-file <vault> <file>".yellow());
+            }
+        }
+
+        "help" => {
+            show_help();
+
+            println!("{}", "Digite o número da pergunta (ou Enter para pular):".purple());
+
+            let mut input = String::new();
+            std::io::stdin().read_line(&mut input).unwrap();
+
+            let answer = input.trim();
+
+            if !answer.is_empty() {
+                cli::questions(answer);
+            }
+        }
+
+        _ => {
+            println!("{}", format!("✖ Comando '{}' não existe.", parts[0]).red());
+            println!("{}", "Digite 'help' para ver os comandos.".yellow());
+        }
+    }
+}
+
+fn main() {
+    let mut rl = DefaultEditor::new().unwrap();
+
+    println!(
+        "{}",
+        "Solo-Sec v0.035alpha iniciado. Digite 'help'".bright_green()
+    );
+
+    loop {
+        let readline = rl.readline(&"solo-sec> ".bright_blue().to_string());
+
+        match readline {
+            Ok(line) => {
+                rl.add_history_entry(line.as_str()).ok();
+
+                let input = line.trim();
+
+                if input.is_empty() {
+                    continue;
+                }
+
+                if input == "exit" {
+                    println!("{}", "Saindo...".yellow());
+                    break;
+                }
+
+                let parts: Vec<&str> = input.split_whitespace().collect();
+                handle_command(parts);
             }
 
-            _ => {
-                println!("Comando desconhecido: {}", parts[0]);
-                println!("Digite 'questions' para ver ajuda.");
+            Err(_) => {
+                println!("{}", "Erro na leitura".red());
+                break;
             }
         }
     }
