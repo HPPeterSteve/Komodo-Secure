@@ -51,7 +51,7 @@ pub fn create(dir: &str) {
     }
     println!("Criando cofre em {}", dir);
    }
-/*
+
 pub fn add_file(vault: &str, file: &str) {
     let diretory = std::path::Path::new(vault);
     if !diretory.exists() {
@@ -62,7 +62,7 @@ pub fn add_file(vault: &str, file: &str) {
     
     println!("Adicionando arquivo {:?} ao cofre {}", file, vault);
 }
-*/
+#[allow(dead_code)]
 pub fn safe_copy<P: AsRef<Path>>(src: P, dstn: P) -> core::result::Result<(), Box<dyn std::error::Error>> {
     let source_path = src.as_ref();
     let destination_path = dstn.as_ref();
@@ -94,24 +94,34 @@ pub fn safe_copy<P: AsRef<Path>>(src: P, dstn: P) -> core::result::Result<(), Bo
 // precisamos garantir que os arquivos estão dentro do diretorio.
 pub fn read_directory(directory: &str) -> Vec<String> {
     let mut files = Vec::new();
-    let mut _counter = 0;
+    let path = Path::new(directory);
 
-    for entry in std::fs::read_dir(directory).unwrap().flatten() {
-        if entry.file_type().unwrap().is_file() {
-            if let Some(name) = entry.file_name().to_str() {
-                files.push(name.to_string());
-            }
-            _counter += 1;
+    let entries = match fs::read_dir(path) {
+        Ok(entries) => entries,
+        Err(e) => {
+            eprintln!("Erro ao ler diretório {}: {}", directory, e);
+            return files;
         }
-        // _counter += 1;
-        // o contador melhora a experiência do usuário.
-        println!("contagem de arquivos totais: {}", _counter);
-        if _counter == 0 {
-            eprintln!("Erro ao ler diretório/arquivos totais: {}", directory);
+    };
+
+    for entry in entries.flatten() {
+        if let Ok(file_type) = entry.file_type() {
+            if file_type.is_file() {
+                if let Some(name) = entry.file_name().to_str() {
+                    files.push(name.to_string());
+                }
+            }
         }
     }
+
+    println!("Total de arquivos: {}", files.len());
+
+    if files.is_empty() {
+        eprintln!("Nenhum arquivo encontrado em: {}", directory);
+    }
+
     files
-}
+}  
 
 const SANDBOX_DIR: &str = "C:/Users/Pedro/Desktop/Solo_SEC/sandbox";
 

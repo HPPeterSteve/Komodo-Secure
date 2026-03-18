@@ -8,7 +8,7 @@ fn main() {
     loop {
         println!(
             "
-        Solo-Sec v0.03 Alpha
+        Solo-Sec v0.03 
         Modules: 6
         Commands: 4
 
@@ -53,10 +53,7 @@ fn main() {
             }
             "add-file" => {
                 if let (Some(vault), Some(file)) = (parts.get(1), parts.get(2)) {
-                    let result = vault::safe_copy(vault, file);
-                    if let Err(e) = result {
-                        eprintln!("Erro ao adicionar arquivo: {}", e);
-                    }
+                    vault::add_file(vault, file);
                 } else {
                     println!("Faltam argumentos para add-file!");
                 }
@@ -68,6 +65,7 @@ fn main() {
                     println!("Falta o caminho do arquivo!");
                 }
             }
+             
             "read-directory" => {
                 if let Some(directory) = parts.get(1) {
                     let files = vault::read_directory(directory);
@@ -76,6 +74,7 @@ fn main() {
                     println!("Falta o caminho do diretório!");
                 }
             }
+            
             "help" => {
                 println!("Digite o número da pergunta para obter a resposta:");
 
