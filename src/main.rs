@@ -1,6 +1,7 @@
 mod cli;
 mod vault;
-mod hash;
+mod crypto;
+
 use colored::*;
 use rustyline::DefaultEditor;
 
@@ -105,13 +106,13 @@ fn handle_command(parts: Vec<&str>) {
             }
         }
         "secure-copy" => {
-            if let (Some(src), Some(vault)) = (parts.get(1), parts.get(2)) {
-            let key = [0u8; 32]; // depois vira Argon2
-            vault::secure_store(src, vault, &key);
+            if let (Some(src), Some(vault), Some(_key)) = (parts.get(1), parts.get(2), parts.get(3)) {
+            let _key = [0u8; 32]; // depois vira Argon2
+            vault::secure_store(src, *vault, &_key);
 
             println!("{}", "✔ Arquivo protegido e armazenado".green());
               } else {
-            println!("{}", "Uso: secure-store <file> <vault>".yellow());
+            println!("{}", "Uso: secure-store <file> <vault> <key>".yellow());
            }
         }
 
@@ -128,7 +129,7 @@ fn main() {
 
     println!(
         "{}",
-        "Solo-Sec v0.035alpha iniciado. Digite 'help'".bright_green()
+        "Solo-Sec v0.036alpha iniciado. Digite 'help'".bright_green()
     );
 
     loop {

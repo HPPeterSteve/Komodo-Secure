@@ -5,8 +5,9 @@ use std::io::Write;
 use std::{
     fs::{self, /*metadata, */ OpenOptions}, io::BufReader, io::BufWriter, path::Path, path::PathBuf,
 };
+
 #[allow(dead_code)]
-use home::home_dir;
+
 use std::io::Read;
 
 
@@ -120,8 +121,9 @@ pub fn safe_copy<P: AsRef<Path>>(src: P, dstn: P) -> core::result::Result<(), Bo
     Ok(())
 
 }
-pub fn secure_store(src: &str, vault: &str) {
-    let key = [0u8; 32]; // depois vira Argon2
+#[allow(dead_code)]
+pub fn secure_store(src: &str, vault: &str, _key: &[u8; 32]) {
+    let _key = [0u8; 32]; // depois vira Argon2
 
     let source = Path::new(src);
     let vault_path = Path::new(vault);
@@ -136,7 +138,7 @@ pub fn secure_store(src: &str, vault: &str) {
         return;
     }
 
-    let file_name = match source.file_name() {
+    let _file_name = match source.file_name() {
         Some(name) => name,
         None => return,
     };
@@ -149,8 +151,8 @@ pub fn secure_store(src: &str, vault: &str) {
         return;
     }
 
-    
-    crate::crypto::encrypt_file(&temp_path, &key);
+
+    crate::crypto::encrypt_file(&temp_path, &_key);
 
     let _ = fs::remove_file(&temp_path);
 
