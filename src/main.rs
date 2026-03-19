@@ -17,6 +17,7 @@ safe-copy <src> <dst>      → copia com segurança
 allow-write <file>         → libera escrita
 read-directory <dir>       → lista arquivos
 isolate-directory <dir>    → isola diretório
+secure-copy <file> <vault> → protege e armazena
 help                       → ajuda
 exit                       → sair
 "
@@ -103,11 +104,22 @@ fn handle_command(parts: Vec<&str>) {
                 cli::questions(answer);
             }
         }
+        "secure-copy" => {
+            if let (Some(src), Some(vault)) = (parts.get(1), parts.get(2)) {
+            let key = [0u8; 32]; // depois vira Argon2
+            vault::secure_store(src, vault, &key);
+
+            println!("{}", "✔ Arquivo protegido e armazenado".green());
+              } else {
+            println!("{}", "Uso: secure-store <file> <vault>".yellow());
+           }
+        }
 
         _ => {
             println!("{}", format!("✖ Comando '{}' não existe.", parts[0]).red());
             println!("{}", "Digite 'help' para ver os comandos.".yellow());
         }
+
     }
 }
 
