@@ -206,7 +206,7 @@ pub fn allow_write(path: &str) {
       
         .expect("Falha ao conseguir metadata")
         .permissions();
-    
+
     permission.set_readonly(false);
 
     fs::set_permissions(path, permission).expect("Falha ao setar permissão de escrita");
@@ -243,7 +243,9 @@ pub fn delete_sandbox<P: AsRef<Path>>(directory: P) -> std::result::Result<(), s
 }
 
 pub fn help() {
+    
     println!("Commands:");
     println!("create-vault <path>");
     println!("add-file <vault> <file>");
+
 }
