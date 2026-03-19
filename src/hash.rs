@@ -8,6 +8,9 @@ use rand::rngs::OsRng;
 use std::fs;
 use std::path::Path;
 
+// funções de criptografia e descriptografia foram criadas
+// ainda em estudo pratico, não há nada a se fazer por enquanto
+
 fn encrypt_file(path: &Path) {
     let data = match fs::read(path) {
         Ok(d) => d,
