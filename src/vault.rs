@@ -5,6 +5,8 @@ use std::io::Write;
 use std::{
     fs::{self, /*metadata, */ OpenOptions}, io::BufReader, io::BufWriter, path::Path, path::PathBuf,
 };
+#[allow(dead_code)]
+use home::home_dir;
 use std::io::Read;
 
 
@@ -116,11 +118,13 @@ pub fn safe_copy<P: AsRef<Path>>(src: P, dstn: P) -> core::result::Result<(), Bo
 
     fs::rename(&temporary_path, destination_path)?;
     Ok(())
+
 }
 
 #[allow(dead_code)]
 // nessa função, é necessario ler e examinar a lista de arquivos
 // precisamos garantir que os arquivos estão dentro do diretorio.
+
 pub fn read_directory(directory: &str) -> Vec<String> {
     let mut files = Vec::new();
     let path = Path::new(directory);
@@ -152,15 +156,18 @@ pub fn read_directory(directory: &str) -> Vec<String> {
     files
 }  
 
-const SANDBOX_DIR: &str = "C:/Users/Pedro/Desktop/Solo_SEC/sandbox";
+
 
 #[allow(dead_code)]
 pub fn isolate_directory(directory: &str) {
+let home_dir = home::home_dir().unwrap();
+let sandbox_path = home_dir.join("Solo_SEC").join("sandbox");
+
     let files = read_directory(directory);
-    let dir_sandbox = Path::new(SANDBOX_DIR);
+    let dir_sandbox = Path::new(&sandbox_path);
 
     if !dir_sandbox.exists() {
-        std::fs::create_dir_all(SANDBOX_DIR).expect("Failed to create sandbox directory");
+        std::fs::create_dir_all(&sandbox_path).expect("Failed to create sandbox directory");
     }
 
     let full_path = dir_sandbox.join(directory);
@@ -177,12 +184,16 @@ pub fn isolate_directory(directory: &str) {
     let mut permission = fs::metadata(directory)
         .expect("Failed to get metadata")
         .permissions();
-    permission.set_readonly(true);
-    fs::set_permissions(directory, permission).expect("Failure permission");
+
+        permission.set_readonly(true);
+        fs::set_permissions(directory, permission).expect("Failure permission");
 }
+
 #[allow(dead_code)]
+
 pub fn allow_write(path: &str) {
     // nota é preciso declarar o arquivo antes de verificar se ele existe, para evitar erros de permissão.
+   
     // ou criar ele e depois checar se existe
     let file_exists = std::path::Path::new(path);
     if !file_exists.exists() {
@@ -192,18 +203,23 @@ pub fn allow_write(path: &str) {
     }
     let _path_write = fs::metadata(&file_exists);
     let mut permission = fs::metadata(&file_exists)
+      
         .expect("Falha ao conseguir metadata")
         .permissions();
+    
     permission.set_readonly(false);
 
     fs::set_permissions(path, permission).expect("Falha ao setar permissão de escrita");
 
     let mut _file = OpenOptions::new()
+
         .write(true)
         .open(&file_exists)
         .expect("Falha ao abrir arquivo para escrita");
+
     writeln!(_file, "Permissão de escrita concedida para {}", path)
         .expect("Falha ao escrever no arquivo");
+
 }
 #[allow(dead_code)]
 pub fn delete_sandbox<P: AsRef<Path>>(directory: P) -> std::result::Result<(), std::io::Error> {

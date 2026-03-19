@@ -1,10 +1,11 @@
 mod cli;
 mod vault;
-
+mod hash;
 use colored::*;
 use rustyline::DefaultEditor;
 
-fn show_help() {
+fn show_help()
+ {
     println!(
         "{}",
         "
@@ -93,7 +94,8 @@ fn handle_command(parts: Vec<&str>) {
             println!("{}", "Digite o número da pergunta (ou Enter para pular):".purple());
 
             let mut input = String::new();
-            std::io::stdin().read_line(&mut input).unwrap();
+            std::io::stdin().read_line(&mut input)
+            .unwrap();
 
             let answer = input.trim();
 
