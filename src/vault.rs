@@ -10,17 +10,20 @@ use home::home_dir;
 use std::io::Read;
 
 
-
 // é usado #[allow(dead_code)] para mitigar avisos de codigo não utilizado, tudo será orquestrado
 // diretamente ao main, e isso é intencional, pois o código é modularizado para facilitar a manutenção e a organização,
 // é má pratica escrever codigo que não seja orquestrado diretamente na main de arquivos únicos.
+
+
 #[allow(dead_code)]
 pub struct Args {
     pub command: String,
     pub path: String,
     pub file: String,
 }
+
 #[allow(dead_code)]
+
 // A função get_args é responsável por coletar os argumentos de linha de comando fornecidos pelo usuário.
 // essa função é essencial para politica de usabilidade deste programa.
 
@@ -59,6 +62,7 @@ pub fn add_file(vault: &str, file: &str) -> Result<(), Box<dyn std::error::Error
     let file_path = Path::new(file);
 
     // validações básicas
+    
     if !vault_path.exists() {
         eprintln!("Cofre não encontrado: {}", vault);
         return Ok(());
@@ -70,6 +74,7 @@ pub fn add_file(vault: &str, file: &str) -> Result<(), Box<dyn std::error::Error
     }
 
     // pega só o nome do arquivo (segurança)
+    
     let file_name = file_path
         .file_name()
         .ok_or("Falha ao obter nome do arquivo")?;
