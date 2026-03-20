@@ -20,6 +20,8 @@ allow-write <file>         → libera escrita
 read-directory <dir>       → lista arquivos
 isolate-directory <dir>    → isola diretório
 secure-copy <file> <vault> → protege e armazena
+encrypt <file>            → criptografa arquivo
+decrypt <file>            → descriptografa arquivo
 help                       → ajuda
 exit                       → sair
 "
@@ -123,6 +125,23 @@ fn handle_command(parts: Vec<&str>) {
         }
     } else {
         println!("{}", "Uso: decrypt <file>".yellow());
+    }
+}
+"secure-copy" => {
+    if let (Some(file), Some(vault_path)) = (parts.get(1), parts.get(2)) {
+        let password = Password::new("Defina uma senha para o cofre:")
+            .without_confirmation()
+            .prompt();
+
+        match password {
+            Ok(pass) => {
+                vault::secure_store(file, vault_path, &pass);
+                println!("{}", "✔ Arquivo protegido e armazenado no cofre".green());
+            }
+            Err(_) => println!("{}", "✖ Erro ao processar senha".red()),
+        }
+    } else {
+        println!("{}", "Uso: secure-copy <arquivo> <diretorio_vault>".yellow());
     }
 }
         
