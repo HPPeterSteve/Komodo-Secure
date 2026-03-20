@@ -1,12 +1,33 @@
 use aes_gcm::{
     aead::{Aead, AeadCore, KeyInit, OsRng},
-    Aes256Gcm, Nonce
+    Aes256Gcm, Nonce,
 };
-use std::fs;
-use std::path::Path;
+use pbkdf2::pbkdf2_hmac;
+use hmac::Hmac;
+use sha2::Sha256;
+use rand::RngCore;
+use std::{fs, path::Path};
 
-pub fn encrypt_file(path: &Path, key_bytes: &[u8; 32]) {
-    // 1. Ler os dados
+type HmacSha256 = Hmac<Sha256>;
+
+const ITERATIONS: u32 = 100_000; // recomendado >= 100k
+const SALT_LEN: usize = 16;
+
+/// Deriva uma chave AES-256 a partir de uma senha e salt
+fn derive_key_from_password(password: &str, salt: &[u8]) -> [u8; 32] {
+    let mut _key = [0u8; 32];
+    pbkdf2_hmac::<HmacSha256>(
+        password.as_bytes(),
+        salt,
+        ITERATIONS,
+        &mut _key,
+    );
+    _key
+}
+
+/// Criptografa um arquivo usando AES-256-GCM + PBKDF2
+pub fn encrypt_file(path: &Path, password: &str) {
+    // 1. Ler dados
     let data = match fs::read(path) {
         Ok(d) => d,
         Err(e) => {
@@ -15,11 +36,16 @@ pub fn encrypt_file(path: &Path, key_bytes: &[u8; 32]) {
         }
     };
 
-    // 2. Inicializar cifra e gerar Nonce aleatório
-    let cipher = Aes256Gcm::new_from_slice(key_bytes).expect("Chave inválida");
-    let nonce = Aes256Gcm::generate_nonce(&mut OsRng); // Agora o OsRng será encontrado
+    // 2. Gerar salt e derivar chave
+    let mut salt = [0u8; SALT_LEN];
+    rand::thread_rng().fill_bytes(&mut salt);
+    let key_bytes = derive_key_from_password(password, &salt);
 
-    // 3. Criptografar (A trait Aead precisa estar no escopo para o .encrypt funcionar)
+    // 3. Inicializar cifra e gerar nonce
+    let cipher = Aes256Gcm::new_from_slice(&key_bytes).expect("Chave inválida");
+    let nonce = Aes256Gcm::generate_nonce(&mut OsRng);
+
+    // 4. Criptografar
     let encrypted = match cipher.encrypt(&nonce, data.as_ref()) {
         Ok(c) => c,
         Err(e) => {
@@ -28,18 +54,23 @@ pub fn encrypt_file(path: &Path, key_bytes: &[u8; 32]) {
         }
     };
 
-    // 4. Concatenar Nonce + Ciphertext (Necessário para conseguir decriptar depois)
-    let mut final_data = nonce.to_vec();
-    final_data.extend(encrypted);
+    // 5. Salvar: SALT (16 bytes) + NONCE (12 bytes) + CIPHERTEXT
+    let mut final_data = Vec::new();
+    final_data.extend_from_slice(&salt);
+    final_data.extend_from_slice(&nonce);
+    final_data.extend_from_slice(&encrypted);
 
     let new_path = path.with_extension("enc");
-    if let Err(e) = fs::write(new_path, final_data) {
+    if let Err(e) = fs::write(&new_path, final_data) {
         eprintln!("Erro ao salvar arquivo: {}", e);
+    } else {
+        println!("Arquivo criptografado salvo em: {:?}", new_path);
     }
 }
-#[allow(dead_code)]
-pub fn decrypt_file(path: &Path, key_bytes: &[u8; 32]) {
-    // 1. Ler o arquivo criptografado (.enc)
+
+/// Descriptografa um arquivo criptografado com `encrypt_file`
+pub fn decrypt_file(path: &Path, password: &str) {
+    // 1. Ler arquivo
     let data = match fs::read(path) {
         Ok(d) => d,
         Err(e) => {
@@ -48,36 +79,36 @@ pub fn decrypt_file(path: &Path, key_bytes: &[u8; 32]) {
         }
     };
 
-    // 2. O AES-GCM usa nonces de 12 bytes. 
-    // Precisamos separar o que é Nonce do que é dado criptografado.
-    if data.len() < 12 {
+    // 2. Verificar tamanho mínimo (SALT + NONCE)
+    if data.len() < SALT_LEN + 12 {
         eprintln!("Erro: Arquivo corrompido ou muito pequeno.");
         return;
     }
 
-    let (nonce_slice, ciphertext) = data.split_at(12);
+    // 3. Extrair salt, nonce e ciphertext
+    let (salt, rest) = data.split_at(SALT_LEN);
+    let (nonce_slice, ciphertext) = rest.split_at(12);
     let nonce = Nonce::from_slice(nonce_slice);
 
-    // 3. Inicializar a cifra com a mesma chave
-    let cipher = Aes256Gcm::new_from_slice(key_bytes).expect("Chave inválida");
+    // 4. Derivar chave
+    let key_bytes = derive_key_from_password(password, salt);
+    let cipher = Aes256Gcm::new_from_slice(&key_bytes).expect("Chave inválida");
 
-    // 4. Decriptar
+    // 5. Descriptografar
     let decrypted = match cipher.decrypt(nonce, ciphertext) {
         Ok(d) => d,
-        Err(_) => {
-            eprintln!("❌ Falha na decriptação! Senha incorreta ou arquivo violado.");
+        Err(e) => {
+            eprintln!("Erro na descriptografia: {}", e);
             return;
         }
     };
 
-    // 5. Salvar o arquivo original (removendo a extensão .enc)
-    let mut new_path = path.to_path_buf();
-    new_path.set_extension(""); // Remove o .enc e tenta voltar ao original
-    
-    // Se o arquivo original não tinha extensão, você pode setar uma específica ou manter assim
+    // 6. Salvar arquivo restaurado
+    let new_path = path.with_extension("dec");
     if let Err(e) = fs::write(&new_path, decrypted) {
-        eprintln!("Erro ao salvar arquivo decriptado: {}", e);
+        eprintln!("Erro ao salvar arquivo descriptografado: {}", e);
     } else {
-        println!("✔ Arquivo restaurado: {:?}", new_path.file_name().unwrap());
+        println!("Arquivo descriptografado salvo em: {:?}", new_path);
     }
 }
+

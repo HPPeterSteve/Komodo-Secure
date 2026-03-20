@@ -127,9 +127,7 @@ pub fn safe_copy<P: AsRef<Path>>(src: P, dstn: P) -> core::result::Result<(), Bo
 
 }
 #[allow(dead_code)]
-pub fn secure_store(src: &str, vault: &str, _key: &[u8; 32]) {
-    let _key = [0u8; 32]; // depois vira Argon2
-
+pub fn secure_store(src: &str, vault: &str, password: &str) {
     let source = Path::new(src);
     let vault_path = Path::new(vault);
 
@@ -143,27 +141,21 @@ pub fn secure_store(src: &str, vault: &str, _key: &[u8; 32]) {
         return;
     }
 
-    let _file_name = match source.file_name() {
+    let file_name = match source.file_name() {
         Some(name) => name,
         None => return,
     };
 
-    let temp_path = vault_path.join("temp_copy");
+    let final_path = vault_path.join(file_name).with_extension("enc");
 
-    
-    if let Err(e) = safe_copy(source, &temp_path) {
-        eprintln!("Erro ao copiar: {}", e);
+    // 🔥 direto, sem temp
+    if let Err(e) = crate::crypto::encrypt_file_to(source, &final_path, password) {
+        eprintln!("Erro ao criptografar: {}", e);
         return;
     }
 
-
-    crate::crypto::encrypt_file(&temp_path, &_key);
-
-    let _ = fs::remove_file(&temp_path);
-
-    println!("✔ Arquivo protegido e armazenado");
+    println!("✔ Arquivo protegido: {}", final_path.display());
 }
-
 #[allow(dead_code)]
 // nessa função, é necessario ler e examinar a lista de arquivos
 // precisamos garantir que os arquivos estão dentro do diretorio.
@@ -269,7 +261,7 @@ pub fn delete_sandbox<P: AsRef<Path>>(directory: P) -> std::result::Result<(), s
     let info_files = directory.as_ref();
     if info_files.exists() && (info_files).is_dir() {
         std::fs::remove_dir_all(info_files)?;
-        println!(" O Sandbox deletada com sucesso: {}", info_files.display());
+        println!(" OSandbox deletada com sucesso: {}", info_files.display());
         {
             eprintln!(
                 "Não foi possivel deletar diretório: {}",

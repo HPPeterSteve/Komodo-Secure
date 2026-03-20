@@ -2,6 +2,8 @@ mod cli;
 mod vault;
 mod crypto;
 
+use std::f64::consts::E;
+
 use colored::*;
 use rustyline::DefaultEditor;
 
@@ -89,7 +91,26 @@ fn handle_command(parts: Vec<&str>) {
                 println!("{}", "Uso: add-file <vault> <file>".yellow());
             }
         }
-
+        "secure-encrypt" => {
+            if let (Some(file), Some(vault)) = (parts.get(1), parts.get(2)) {
+                match crypto::secure_encrypt(file, vault) {
+                    Ok(_) => println!("{}", "✔ Arquivo protegido e armazenado".green()),
+                    Err(e) => eprintln!("{}", format!("✖ Erro: {}", e).red()),
+                }
+            } else {
+                println!("{}", "Uso: secure-encrypt <file> <vault>".yellow());
+            }
+        }
+        "decrypt-file" => {
+         if let (Some(file), Some(password)) = (parts.get(1), parts.get(2)) {
+            // A função já imprime o erro internamente se algo falhar, 
+            // então basta chamá-la.
+          crypto::decrypt_file(Path::new(file), password);
+            } else {
+           println!("{}", "Uso: decrypt-file <file> <password>".yellow());
+            }
+        }
+  
         "help" => {
             show_help();
 
@@ -105,16 +126,7 @@ fn handle_command(parts: Vec<&str>) {
                 cli::questions(answer);
             }
         }
-        "secure-copy" => {
-            if let (Some(src), Some(vault), Some(_key)) = (parts.get(1), parts.get(2), parts.get(3)) {
-            let _key = [0u8; 32]; // depois vira Argon2
-            vault::secure_store(src, *vault, &_key);
-
-            println!("{}", "✔ Arquivo protegido e armazenado".green());
-              } else {
-            println!("{}", "Uso: secure-store <file> <vault> <key>".yellow());
-           }
-        }
+        
 
         _ => {
             println!("{}", format!("✖ Comando '{}' não existe.", parts[0]).red());
@@ -129,7 +141,7 @@ fn main() {
 
     println!(
         "{}",
-        "Solo-Sec v0.036alpha iniciado. Digite 'help'".bright_green()
+        "Solo-Sec v0.036alph iniciado. Digite 'help'".bright_green()
     );
 
     loop {
