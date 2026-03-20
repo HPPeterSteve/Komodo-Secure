@@ -1,151 +1,190 @@
-# Solo Secure
-## Download
-### Windows (10/11 x64/x86)
+# 🔐 Solo-Secure
 
-- [v0.03 Alpha](https://github.com/HPPeterSteve/Solo-Secure/raw/main/Exe_files/Solo_sec_v0.03alpha.exe)
-- [v0.02 Experimental](https://github.com/HPPeterSteve/Solo-Secure/raw/main/Exe_files/Solo_sec_v0.02.exe)
-- [v0.01 Experimental](https://github.com/HPPeterSteve/Solo-Secure/raw/main/Exe_files/Solo_sec_v0.01.exe)
-
-
-
-CLI tool for file protection, written in Rust.
-## 🤝 Contributing
-
-Contributions are welcome — especially from developers interested in Rust, systems programming, and security.
-
-If you'd like to contribute:
-
-* Fork the repository
-* Create a branch (`feature/your-feature` or `fix/your-fix`)
-* Keep the code clean, simple, and well-structured
-* Add comments only when necessary (avoid noise)
-* Open a Pull Request with a clear explanation of what was done
+> CLI de segurança em Rust para proteção, isolamento e gerenciamento seguro de arquivos.
 
 ---
 
-### 🔍 Areas for Contribution
+## 🚀 Visão Geral
 
-This project is evolving, and help is especially welcome in:
+O **Solo-Secure** é uma ferramenta de linha de comando (CLI) focada em:
 
-* Security improvements (file integrity, stronger protection mechanisms)
-* CLI usability and argument parsing
-* Performance optimization
-* Error handling and logging
-* Cross-platform support (Linux/macOS)
+* Criação e gerenciamento de cofres de arquivos
+* Criptografia segura com AES-256-GCM
+* Operações seguras de cópia e isolamento
+* Controle de permissões
 
----
-
-### ⚠️ Notes
-
-* This project is in **alpha stage** — breaking changes may occur
-* Focus on clarity and simplicity over complexity
-* Every contribution, even small ones, is valuable
+Projetado com foco em **segurança, simplicidade e extensibilidade**.
 
 ---
 
-Build something solid.
+## ⚙️ Instalação
 
-## Build from source
+### Pré-requisitos
+
+* Rust (via rustup)
+* Linux recomendado (Ubuntu 22.04+)
+
+### Clone e build
 
 ```bash
+git clone https://github.com/HPPeterSteve/Solo-Secure.git
+cd Solo-Secure
 cargo build --release
-# Solo Secure
+```
 
-**Solo Secure** is a CLI tool written in Rust focused on file protection, isolation, and integrity.
-
-> Built from scratch with a focus on learning, security concepts, and real-world problem solving.
-
----
-
-## 📌 Overview
-
-Solo Secure was created as a personal project to explore low-level file handling and security practices using Rust.
-
-The tool provides mechanisms to:
-
-* Copy and isolate files into a controlled environment
-* Apply basic protection layers (read-only restrictions)
-* Organize secure file handling workflows
-* Experiment with security-focused features like external key validation
-
----
-
-## 🚀 Features
-
-* 📁 File isolation (secure copy system)
-* 🔒 Read-only protection layer
-* 🧩 Modular architecture (separated concerns)
-* 🔑 Experimental USB key verification system
-* ⚡ Lightweight CLI interface
-
----
-
-## 🛠️ Built With
-
-* Rust
-* Standard Library (`std::fs`, `std::env`, etc.)
-
----
-
-### Build from source
+Binário gerado em:
 
 ```bash
-cargo build --release
+target/release/Solo_sec
 ```
 
 ---
 
-## ▶️ Usage
+## 📦 Comandos
 
-Basic example:
+| Comando                      | Descrição                       |
+| ---------------------------- | ------------------------------- |
+| `create-vault <path>`        | Cria um novo cofre              |
+| `add-file <vault> <file>`    | Adiciona arquivo ao cofre       |
+| `safe-copy <src> <dst>`      | Cópia segura (atomicidade)      |
+| `allow-write <file>`         | Libera escrita                  |
+| `read-directory <dir>`       | Lista arquivos                  |
+| `isolate-directory <dir>`    | Isola diretório                 |
+| `secure-copy <file> <vault>` | Criptografa e move para o cofre |
+| `encrypt <file> [senha]`     | Criptografa arquivo             |
+| `decrypt <file> [senha]`     | Descriptografa arquivo          |
+| `help`                       | Ajuda                           |
+| `exit`                       | Sair                            |
 
-```bash
-solo_secure <command> [options]
+---
+
+## 🔐 Criptografia
+
+* Algoritmo: **AES-256-GCM**
+* Derivação de chave: **PBKDF2 (SHA-256)**
+* Salt aleatório por operação
+* Nonce único por criptografia
+
+### 🔄 Fluxo
+
+```
+plaintext → derivação de chave → AES-256-GCM → arquivo .enc
 ```
 
-> More commands and usage examples will be documented in future versions.
+---
+
+## 🔑 Entrada de Senha (Modo Inteligente)
+
+O sistema utiliza fallback em três níveis:
+
+1. **Argumento CLI**
+
+   ```bash
+   encrypt arquivo.txt senha123
+   ```
+
+2. **stdin (automação)**
+
+   ```bash
+   echo "senha123" | Solo_sec encrypt arquivo.txt
+   ```
+
+3. **Prompt seguro interativo**
 
 ---
 
-## ⚠️ Disclaimer
+### ⚠️ Aviso de Segurança
 
-This project is currently in **alpha stage** and should not be considered a fully secure solution.
+* Senhas via argumento podem aparecer no histórico do terminal
+* Recomendado para produção:
 
-* Read-only protection is not a complete security mechanism
-* The tool is intended for learning and experimentation
-* Use at your own risk
-
----
-
-## 🧠 Motivation
-
-The name reflects both the development process and the purpose:
-
-* **Solo** → built alone, representing independence and persistence
-* **Secure (Sec)** → the goal of creating safety and protection
-
-This project is both a technical journey and a personal challenge.
+```bash
+echo "senha" | Solo_sec encrypt arquivo.txt
+```
 
 ---
 
-## 📈 Roadmap
+## 🧪 Testes
 
-* [ ] File integrity verification (hashing)
-* [ ] Improved error handling
-* [ ] Logging system
-* [ ] Stronger protection mechanisms
-* [ ] CLI improvements (argument parsing)
-* [ ] Cross-platform support
+### Teste de integridade
+
+```bash
+Solo_sec encrypt arquivo.txt senha
+Solo_sec decrypt arquivo.enc senha
+diff arquivo.txt arquivo.dec
+```
+
+Resultado esperado:
+
+```
+Integridade confirmada
+```
 
 ---
 
-## 🤝 Contributing
+## 🧠 Arquitetura
 
-Contributions, ideas, and feedback are welcome.
+Separação de responsabilidades:
+
+```
+CLI (main)
+  ↓
+Crypto (criptografia)
+  ↓
+Vault (armazenamento)
+```
+
+### Princípios
+
+* Cada módulo faz **uma única função**
+* Criptografia desacoplada do sistema de arquivos
+* CLI apenas orquestra operações
 
 ---
 
-## 📄 License
+## 🧪 Futuro / Roadmap
+
+* [ ] Migração para Argon2
+* [ ] Suporte a plugins
+* [ ] Fuzz testing (cargo fuzz)
+* [ ] Cobertura de testes (tarpaulin)
+* [ ] Logs estruturados
+* [ ] Suporte a variáveis de ambiente para senha
+
+---
+
+## 🤝 Contribuição
+
+Contribuições são bem-vindas!
+
+### Como contribuir
+
+1. Fork do projeto
+2. Crie uma branch (`feature/minha-feature`)
+3. Commit suas mudanças
+4. Abra um Pull Request
+
+---
+
+## 📄 Licença
 
 MIT License
 
+---
+
+## 💡 Filosofia
+
+> Segurança não é só criptografia.
+> É controle, previsibilidade e confiança no sistema.
+
+---
+
+## 👨‍💻 Autor
+
+Desenvolvido por Peter
+
+---
+
+## ⭐ Se esse projeto te ajudou
+
+Considere dar uma estrela no repositório!
