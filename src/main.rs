@@ -2,9 +2,8 @@ mod cli;
 mod vault;
 mod crypto;
 
-use std::f64::consts::E;
-
 use colored::*;
+use inquire::Password;
 use rustyline::DefaultEditor;
 
 fn show_help()
@@ -91,25 +90,42 @@ fn handle_command(parts: Vec<&str>) {
                 println!("{}", "Uso: add-file <vault> <file>".yellow());
             }
         }
-        "secure-encrypt" => {
-            if let (Some(file), Some(vault)) = (parts.get(1), parts.get(2)) {
-                match crypto::secure_encrypt(file, vault) {
-                    Ok(_) => println!("{}", "✔ Arquivo protegido e armazenado".green()),
-                    Err(e) => eprintln!("{}", format!("✖ Erro: {}", e).red()),
-                }
-            } else {
-                println!("{}", "Uso: secure-encrypt <file> <vault>".yellow());
+        "encrypt" => {
+    if let Some(file) = parts.get(1) {
+        let password = Password::new("Senha:")
+            .without_confirmation()
+            .prompt();
+
+        match password {
+            Ok(pass) => {
+                crypto::encrypt_file(std::path::Path::new(file), &pass);
+                println!("{}", "✔ Arquivo criptografado".green());
             }
+            Err(_) => println!("{}", "✖ Erro ao ler senha".red()),
         }
-        "decrypt-file" => {
-         if let (Some(file), Some(password)) = (parts.get(1), parts.get(2)) {
-            // A função já imprime o erro internamente se algo falhar, 
-            // então basta chamá-la.
-          crypto::decrypt_file(Path::new(file), password);
-            } else {
-           println!("{}", "Uso: decrypt-file <file> <password>".yellow());
+    } else {
+        println!("{}", "Uso: encrypt <file>".yellow());
+    }
+}
+
+"decrypt" => {
+    if let Some(file) = parts.get(1) {
+        let password = Password::new("Senha:")
+            .without_confirmation()
+            .prompt();
+
+        match password {
+            Ok(pass) => {
+                crypto::decrypt_file(std::path::Path::new(file), &pass);
+                println!("{}", "✔ Arquivo descriptografado".green());
             }
+            Err(_) => println!("{}", "✖ Erro ao ler senha".red()),
         }
+    } else {
+        println!("{}", "Uso: decrypt <file>".yellow());
+    }
+}
+        
   
         "help" => {
             show_help();

@@ -3,7 +3,7 @@ use std::env;
 #[allow(dead_code)]
 use std::io::Write;
 use std::{
-    fs::{self, /*metadata, */ OpenOptions}, io::BufReader, io::BufWriter, path::Path, path::PathBuf,
+ fs::{self, /*metadata, */ OpenOptions}, io::{BufReader, BufWriter}, path::{Path, PathBuf}
 };
 
 #[allow(dead_code)]
@@ -127,7 +127,7 @@ pub fn safe_copy<P: AsRef<Path>>(src: P, dstn: P) -> core::result::Result<(), Bo
 
 }
 #[allow(dead_code)]
-pub fn secure_store(src: &str, vault: &str, password: &str) {
+pub fn secure_store(src: &str, vault: &str, _password: &str) {
     let source = Path::new(src);
     let vault_path = Path::new(vault);
 
@@ -146,16 +146,9 @@ pub fn secure_store(src: &str, vault: &str, password: &str) {
         None => return,
     };
 
-    let final_path = vault_path.join(file_name).with_extension("enc");
-
-    // 🔥 direto, sem temp
-    if let Err(e) = crate::crypto::encrypt_file_to(source, &final_path, password) {
-        eprintln!("Erro ao criptografar: {}", e);
-        return;
-    }
-
-    println!("✔ Arquivo protegido: {}", final_path.display());
+    let _final_path = vault_path.join(file_name).with_extension("enc");
 }
+
 #[allow(dead_code)]
 // nessa função, é necessario ler e examinar a lista de arquivos
 // precisamos garantir que os arquivos estão dentro do diretorio.

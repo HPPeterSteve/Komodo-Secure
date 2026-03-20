@@ -3,20 +3,19 @@ use aes_gcm::{
     Aes256Gcm, Nonce,
 };
 use pbkdf2::pbkdf2_hmac;
-use hmac::Hmac;
 use sha2::Sha256;
 use rand::RngCore;
 use std::{fs, path::Path};
 
-type HmacSha256 = Hmac<Sha256>;
 
-const ITERATIONS: u32 = 100_000; // recomendado >= 100k
+
+const ITERATIONS: u32 = 100_000;
 const SALT_LEN: usize = 16;
 
 /// Deriva uma chave AES-256 a partir de uma senha e salt
 fn derive_key_from_password(password: &str, salt: &[u8]) -> [u8; 32] {
     let mut _key = [0u8; 32];
-    pbkdf2_hmac::<HmacSha256>(
+    pbkdf2_hmac::<Sha256>(
         password.as_bytes(),
         salt,
         ITERATIONS,
@@ -67,7 +66,7 @@ pub fn encrypt_file(path: &Path, password: &str) {
         println!("Arquivo criptografado salvo em: {:?}", new_path);
     }
 }
-
+#[allow(dead_code)]
 /// Descriptografa um arquivo criptografado com `encrypt_file`
 pub fn decrypt_file(path: &Path, password: &str) {
     // 1. Ler arquivo
