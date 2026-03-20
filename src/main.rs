@@ -94,16 +94,18 @@ fn handle_command(parts: Vec<&str>) {
         }
         "encrypt" => {
     if let Some(file) = parts.get(1) {
-        let password = Password::new("Senha:")
+        let pass = Password::new("Senha:")
             .without_confirmation()
-            .prompt();
+            .prompt()
+            .unwrap_or_default();
 
-        match password {
-            Ok(pass) => {
-                crypto::encrypt_file(std::path::Path::new(file), &pass);
-                println!("{}", "✔ Arquivo criptografado".green());
-            }
-            Err(_) => println!("{}", "✖ Erro ao ler senha".red()),
+        if !pass.is_empty() {
+            let current_dir = std::env::current_dir().expect("Falha ao obter diretório atual");
+            let full_path = current_dir.join(file);
+            crypto::encrypt_file(&full_path, &pass);
+            println!("{}", "✔ Arquivo criptografado".green());
+        } else {
+            println!("{}", "✖ Senha vazia ou erro ao ler senha".red());
         }
     } else {
         println!("{}", "Uso: encrypt <file>".yellow());
@@ -112,16 +114,18 @@ fn handle_command(parts: Vec<&str>) {
 
 "decrypt" => {
     if let Some(file) = parts.get(1) {
-        let password = Password::new("Senha:")
+        let pass = Password::new("Senha:")
             .without_confirmation()
-            .prompt();
+            .prompt()
+            .unwrap_or_default();
 
-        match password {
-            Ok(pass) => {
-                crypto::decrypt_file(std::path::Path::new(file), &pass);
-                println!("{}", "✔ Arquivo descriptografado".green());
-            }
-            Err(_) => println!("{}", "✖ Erro ao ler senha".red()),
+        if !pass.is_empty() {
+            let current_dir = std::env::current_dir().expect("Falha ao obter diretório atual");
+            let full_path = current_dir.join(file);
+            crypto::decrypt_file(&full_path, &pass);
+            println!("{}", "✔ Arquivo descriptografado".green());
+        } else {
+            println!("{}", "✖ Senha vazia ou erro ao ler senha".red());
         }
     } else {
         println!("{}", "Uso: decrypt <file>".yellow());
@@ -129,16 +133,16 @@ fn handle_command(parts: Vec<&str>) {
 }
 "secure-copy" => {
     if let (Some(file), Some(vault_path)) = (parts.get(1), parts.get(2)) {
-        let password = Password::new("Defina uma senha para o cofre:")
+        let pass = Password::new("Defina uma senha para o cofre:")
             .without_confirmation()
-            .prompt();
+            .prompt()
+            .unwrap_or_default();
 
-        match password {
-            Ok(pass) => {
-                vault::secure_store(file, vault_path, &pass);
-                println!("{}", "✔ Arquivo protegido e armazenado no cofre".green());
-            }
-            Err(_) => println!("{}", "✖ Erro ao processar senha".red()),
+        if !pass.is_empty() {
+            vault::secure_store(file, vault_path, &pass);
+            println!("{}", "✔ Arquivo protegido e armazenado no cofre".green());
+        } else {
+            println!("{}", "✖ Senha vazia ou erro ao processar senha".red());
         }
     } else {
         println!("{}", "Uso: secure-copy <arquivo> <diretorio_vault>".yellow());

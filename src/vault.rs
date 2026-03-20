@@ -157,9 +157,23 @@ pub fn secure_store(src: &str, vault: &str, password: &str) {
         return;
     }
 
-    crate::crypto::encrypt_file(&destination, password);
+    // 3. Copiamos o arquivo original para o cofre
+    let destination_in_vault = vault_path.join(file_name);
+    if let Err(e) = safe_copy(source, &destination_in_vault) {
+        eprintln!("Erro ao copiar arquivo para o cofre: {}", e);
+        return;
+    }
 
-    let _ = std::fs::remove_file(destination); 
+    // 4. Criptografamos a cópia do arquivo dentro do cofre. A função encrypt_file criará um novo arquivo .enc
+    // e manterá o original (não criptografado) no mesmo local.
+    crate::crypto::encrypt_file(&destination_in_vault, password);
+
+    // 5. Removemos a cópia não criptografada do arquivo que está dentro do cofre.
+    // O arquivo criptografado (com extensão .enc) permanecerá.
+    let _ = fs::remove_file(&destination_in_vault);
+
+    // 6. Removemos o arquivo original da sua localização inicial.
+    let _ = fs::remove_file(source);
 }
 #[allow(dead_code)]
 // nessa função, é necessario ler e examinar a lista de arquivos
@@ -288,5 +302,4 @@ pub fn help() {
     println!("Commands:");
     println!("create-vault <path>");
     println!("add-file <vault> <file>");
-
 }
