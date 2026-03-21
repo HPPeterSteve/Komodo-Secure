@@ -132,11 +132,30 @@ bool try_hard_isolate(const char *app_path) {
     // ───────────────────────────────────────────────
     // 7. Monta mínimos essenciais (senão muita coisa quebra)
     // ───────────────────────────────────────────────
-    mkdir("/proc", 0555);
+     mkdir("/proc", 0555);
     if (mount("proc", "/proc", "proc", MS_NOSUID|MS_NOEXEC|MS_NODEV, NULL) == -1) {
         // continue mesmo assim
     }
 
+    // ───────────────────────────────────────────────
+    // 8. Seccomp: Restringir syscalls perigosas
+    // ───────────────────────────────────────────────
+    scmp_filter_ctx ctx = seccomp_init(SCMP_ACT_ALLOW); // Permitir por padrão, mas restringir o crítico
+    if (ctx == NULL) return false;
+
+    // Bloquear chamadas que podem ser usadas para escapar do namespace ou comprometer o host
+    seccomp_rule_add(ctx, SCMP_ACT_KILL, SCMP_SYS(reboot), 0);
+    seccomp_rule_add(ctx, SCMP_ACT_KILL, SCMP_SYS(swapon), 0);
+    seccomp_rule_add(ctx, SCMP_ACT_KILL, SCMP_SYS(swapoff), 0);
+    seccomp_rule_add(ctx, SCMP_ACT_KILL, SCMP_SYS(mount), 0);
+    seccomp_rule_add(ctx, SCMP_ACT_KILL, SCMP_SYS(umount2), 0);
+    seccomp_rule_add(ctx, SCMP_ACT_KILL, SCMP_SYS(ptrace), 0);
+
+    if (seccomp_load(ctx) < 0) {
+        seccomp_release(ctx);
+        return false;
+    }
+    seccomp_release(ctx);
 
     return true;
 }

@@ -22,6 +22,8 @@ isolate-directory <dir>    → isola diretório
 secure-copy <file> <vault> [pass] → protege e armazena (senha opcional)
 encrypt <file> [pass]      → criptografa arquivo (senha opcional)
 decrypt <file> [pass]      → descriptografa arquivo (senha opcional)
+remove-file <vault> <file> → remove arquivo do cofre
+status <vault>             → status do cofre
 help                       → ajuda
 exit                       → sair
 "
@@ -110,6 +112,28 @@ fn handle_command(parts: Vec<&str>) {
                 }
             } else {
                 println!("{}", "Uso: add-file <vault> <file>".yellow());
+            }
+        }
+
+        "remove-file" => {
+            if let (Some(vault_path), Some(file)) = (parts.get(1), parts.get(2)) {
+                match vault::remove_file(vault_path, file) {
+                    Ok(_) => println!("{}", "✔ Arquivo removido".green()),
+                    Err(e) => eprintln!("{}", format!("✖ Erro: {}", e).red()),
+                }
+            } else {
+                println!("{}", "Uso: remove-file <vault> <file>".yellow());
+            }
+        }
+
+        "status" => {
+            if let Some(vault_path) = parts.get(1) {
+                match vault::get_vault_status(vault_path) {
+                    Ok(_) => (),
+                    Err(e) => eprintln!("{}", format!("✖ Erro: {}", e).red()),
+                }
+            } else {
+                println!("{}", "Uso: status <vault>".yellow());
             }
         }
 

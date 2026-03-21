@@ -314,10 +314,44 @@ pub fn delete_sandbox<P: AsRef<Path>>(directory: P) -> std::result::Result<(), s
     Ok(())
 }
 
-pub fn help() {
+pub fn remove_file(vault: &str, file_name: &str) -> Result<(), Box<dyn std::error::Error>> {
+    let vault_path = Path::new(vault);
+    let file_path = vault_path.join(file_name);
 
+    if !file_path.exists() {
+        return Err(format!("Arquivo '{}' não encontrado no cofre '{}'", file_name, vault).into());
+    }
+
+    fs::remove_file(file_path)?;
+    println!("✔ Arquivo '{}' removido do cofre '{}'", file_name, vault);
+    Ok(())
+}
+
+pub fn get_vault_status(vault: &str) -> Result<(), Box<dyn std::error::Error>> {
+    let vault_path = Path::new(vault);
+    if !vault_path.exists() {
+        return Err(format!("Cofre '{}' não encontrado", vault).into());
+    }
+
+    let files = read_directory(vault);
+    let mut total_size = 0;
+    for file in &files {
+        let path = vault_path.join(file);
+        if let Ok(metadata) = fs::metadata(path) {
+            total_size += metadata.len();
+        }
+    }
+
+    println!("\n--- Status do Cofre: {} ---", vault);
+    println!("Total de arquivos: {}", files.len());
+    println!("Tamanho total: {:.2} KB", total_size as f64 / 1024.0);
+    Ok(())
+}
+
+pub fn help() {
     println!("Commands:");
     println!("create-vault <path>");
     println!("add-file <vault> <file>");
-
+    println!("remove-file <vault> <file>");
+    println!("status <vault>");
 }
