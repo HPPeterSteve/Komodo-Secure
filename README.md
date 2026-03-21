@@ -1,4 +1,4 @@
-# 🔐 Solo-Secure v0.4.0
+# 🔐 Solo-Secure v0.5.0
 
 > CLI de segurança em Rust para proteção, isolamento e gerenciamento seguro de arquivos, com foco em robustez e usabilidade.
 
@@ -20,7 +20,7 @@ Projetado com foco em **segurança, simplicidade e extensibilidade**.
 Para a instalação mais rápida, você pode baixar o binário pré-compilado:
 
 ```bash
-wget https://github.com/HPPeterSteve/Solo-Secure/releases/download/v0.4.0/Solo_sec_v0.4.0_linux_amd64 -O Solo_sec
+wget https://github.com/HPPeterSteve/Solo-Secure/releases/download/v0.5.0/Solo_sec_v0.5.0_linux_amd64 -O Solo_sec
 chmod +x Solo_sec
 sudo mv Solo_sec /usr/local/bin/
 ```
@@ -121,13 +121,24 @@ Resultado esperado:
 Integridade confirmada
 ```
 
+## 🛡️ Segurança e Melhorias (v0.5.0)
+
+Esta versão traz um salto em **usabilidade** e **rastreabilidade**:
+
+*   **Sub-sistema de Assistência de Caminhos (Path Assistant)**: 
+    *   **Fuzzy Matching**: Se você digitar um caminho errado, o sistema sugere o arquivo mais próximo usando a distância de Levenshtein.
+    *   **Interatividade**: Prompts inteligentes que guiam o usuário caso faltem argumentos ou caminhos.
+*   **Sistema de Logs Estruturado**: Todas as operações (sucessos, avisos e erros) são registradas no arquivo `solo_secure.log` com timestamps precisos.
+*   **Filtros Seccomp no Sandbox**: Isolamento de diretórios reforçado no componente em C para bloquear chamadas de sistema críticas.
+*   **UX Refinada**: Interface CLI mais amigável com integração total da biblioteca `inquire`.
+
+---
+
 ## 🛡️ Segurança e Melhorias (v0.4.0)
 
-Esta versão introduz melhorias significativas em segurança e funcionalidade:
-
-*   **Filtros Seccomp no Sandbox**: O componente em C (`sandbox.c`) agora utiliza filtros `seccomp` para restringir chamadas de sistema perigosas (ex: `reboot`, `mount`, `ptrace`), aumentando drasticamente a segurança do isolamento de diretórios.
-*   **Tratamento de Erros Aprimorado**: Melhor propagação de erros e feedback mais claro ao usuário em todas as operações, especialmente em criptografia e gerenciamento de cofres.
-*   **Novos Comandos**: Adição dos comandos `status` e `remove-file` para um gerenciamento mais completo dos cofres.
+*   **Filtros Seccomp no Sandbox**: Introdução do isolamento via seccomp.
+*   **Tratamento de Erros Aprimorado**: Feedback mais claro ao usuário.
+*   **Novos Comandos**: Adição de `status` e `remove-file`.
 
 ## 🧠 Arquitetura
 
