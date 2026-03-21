@@ -1,11 +1,13 @@
 mod cli;
 mod vault;
 mod crypto;
+mod path_assistant;
 
 use colored::*;
 use inquire::Password;
 use rustyline::DefaultEditor;
 use std::io::{self, IsTerminal};
+use std::path::PathBuf;
 
 fn show_help() {
     println!(
@@ -55,138 +57,137 @@ fn get_password(prompt_text: &str, provided_pass: Option<&&str>) -> String {
 fn handle_command(parts: Vec<&str>) {
     match parts[0] {
         "isolate-directory" => {
-            if let Some(dir) = parts.get(1) {
-                vault::isolate_directory(dir);
-            } else {
-                println!("{}", "Uso: isolate-directory <dir>".yellow());
+            if let Some(dir) = path_assistant::ensure_path(parts.get(1), "Diretório para isolar:", true) {
+                vault::isolate_directory(dir.to_str().unwrap());
             }
         }
 
         "create-vault" => {
-            if let Some(path) = parts.get(1) {
-                vault::create(path);
-                println!("{}", "✔ Cofre criado".green());
+            let path = if let Some(p) = parts.get(1) {
+                PathBuf::from(p)
             } else {
-                println!("{}", "Uso: create-vault <path>".yellow());
+                let input = inquire::Text::new("Caminho para o novo cofre:").prompt().unwrap_or_default();
+                PathBuf::from(input)
+            };
+            
+            if !path.as_os_str().is_empty() {
+                vault::create(path.to_str().unwrap());
+                println!("{}", "✔ Cofre criado".green());
             }
         }
 
         "safe-copy" => {
-            if let (Some(src), Some(dst)) = (parts.get(1), parts.get(2)) {
-                match vault::safe_copy(src, dst) {
+            let src = path_assistant::ensure_path(parts.get(1), "Arquivo de origem:", false);
+            let dst = if let Some(p) = parts.get(2) {
+                Some(PathBuf::from(p))
+            } else {
+                let input = inquire::Text::new("Caminho de destino:").prompt().ok();
+                input.map(PathBuf::from)
+            };
+
+            if let (Some(s), Some(d)) = (src, dst) {
+                match vault::safe_copy(s.to_str().unwrap(), d.to_str().unwrap()) {
                     Ok(_) => println!("{}", "✔ Arquivo copiado".green()),
                     Err(e) => eprintln!("{}", format!("✖ Erro: {}", e).red()),
                 }
-            } else {
-                println!("{}", "Uso: safe-copy <src> <dst>".yellow());
             }
         }
 
         "allow-write" => {
-            if let Some(path) = parts.get(1) {
-                vault::allow_write(path);
+            if let Some(path) = path_assistant::ensure_path(parts.get(1), "Arquivo para liberar escrita:", false) {
+                vault::allow_write(path.to_str().unwrap());
                 println!("{}", "✔ Escrita liberada".green());
-            } else {
-                println!("{}", "Uso: allow-write <file>".yellow());
             }
         }
 
         "read-directory" => {
-            if let Some(dir) = parts.get(1) {
-                let files = vault::read_directory(dir);
-
-                println!("{}", format!("📁 {}:", dir).blue());
+            if let Some(dir) = path_assistant::ensure_path(parts.get(1), "Diretório para listar:", true) {
+                let dir_str = dir.to_str().unwrap();
+                let files = vault::read_directory(dir_str);
+                println!("{}", format!("📁 {}:", dir_str).blue());
                 for f in files {
                     println!("  {}", format!("• {}", f).white());
                 }
-            } else {
-                println!("{}", "Uso: read-directory <dir>".yellow());
             }
         }
 
         "add-file" => {
-            if let (Some(vault_path), Some(file)) = (parts.get(1), parts.get(2)) {
-                match vault::add_file(vault_path, file) {
+            let vault_path = path_assistant::ensure_path(parts.get(1), "Caminho do cofre:", true);
+            let file = path_assistant::ensure_path(parts.get(2), "Arquivo para adicionar:", false);
+
+            if let (Some(v), Some(f)) = (vault_path, file) {
+                match vault::add_file(v.to_str().unwrap(), f.to_str().unwrap()) {
                     Ok(_) => println!("{}", "✔ Arquivo adicionado".green()),
                     Err(e) => eprintln!("{}", format!("✖ Erro: {}", e).red()),
                 }
-            } else {
-                println!("{}", "Uso: add-file <vault> <file>".yellow());
             }
         }
 
         "remove-file" => {
-            if let (Some(vault_path), Some(file)) = (parts.get(1), parts.get(2)) {
-                match vault::remove_file(vault_path, file) {
+            let vault_path = path_assistant::ensure_path(parts.get(1), "Caminho do cofre:", true);
+            let file = if let Some(f) = parts.get(2) {
+                Some(f.to_string())
+            } else {
+                inquire::Text::new("Nome do arquivo no cofre:").prompt().ok()
+            };
+
+            if let (Some(v), Some(f)) = (vault_path, file) {
+                match vault::remove_file(v.to_str().unwrap(), &f) {
                     Ok(_) => println!("{}", "✔ Arquivo removido".green()),
                     Err(e) => eprintln!("{}", format!("✖ Erro: {}", e).red()),
                 }
-            } else {
-                println!("{}", "Uso: remove-file <vault> <file>".yellow());
             }
         }
 
         "status" => {
-            if let Some(vault_path) = parts.get(1) {
-                match vault::get_vault_status(vault_path) {
+            if let Some(vault_path) = path_assistant::ensure_path(parts.get(1), "Caminho do cofre:", true) {
+                match vault::get_vault_status(vault_path.to_str().unwrap()) {
                     Ok(_) => (),
                     Err(e) => eprintln!("{}", format!("✖ Erro: {}", e).red()),
                 }
-            } else {
-                println!("{}", "Uso: status <vault>".yellow());
             }
         }
 
         "encrypt" => {
-            if let Some(file) = parts.get(1) {
+            if let Some(file) = path_assistant::ensure_path(parts.get(1), "Arquivo para criptografar:", false) {
                 let pass = get_password("Senha:", parts.get(2));
-
                 if !pass.is_empty() {
-                    let current_dir = std::env::current_dir().expect("Falha ao obter diretório atual");
-                    let full_path = current_dir.join(file);
-                    match crypto::encrypt_file(&full_path, &pass) {
+                    match crypto::encrypt_file(&file, &pass) {
                         Ok(_) => println!("{}", "✔ Arquivo criptografado".green()),
                         Err(e) => eprintln!("{}", format!("✖ Erro: {}", e).red()),
                     }
                 } else {
                     println!("{}", "✖ Senha vazia ou erro ao ler senha".red());
                 }
-            } else {
-                println!("{}", "Uso: encrypt <file> [senha]".yellow());
             }
         }
 
         "decrypt" => {
-            if let Some(file) = parts.get(1) {
+            if let Some(file) = path_assistant::ensure_path(parts.get(1), "Arquivo para descriptografar:", false) {
                 let pass = get_password("Senha:", parts.get(2));
-
                 if !pass.is_empty() {
-                    let current_dir = std::env::current_dir().expect("Falha ao obter diretório atual");
-                    let full_path = current_dir.join(file);
-                    match crypto::decrypt_file(&full_path, &pass) {
+                    match crypto::decrypt_file(&file, &pass) {
                         Ok(_) => println!("{}", "✔ Arquivo descriptografado".green()),
                         Err(e) => eprintln!("{}", format!("✖ Erro: {}", e).red()),
                     }
                 } else {
                     println!("{}", "✖ Senha vazia ou erro ao ler senha".red());
                 }
-            } else {
-                println!("{}", "Uso: decrypt <file> [senha]".yellow());
             }
         }
 
         "secure-copy" => {
-            if let (Some(file), Some(vault_path)) = (parts.get(1), parts.get(2)) {
-                let pass = get_password("Defina uma senha para o cofre:", parts.get(3));
+            let file = path_assistant::ensure_path(parts.get(1), "Arquivo de origem:", false);
+            let vault_path = path_assistant::ensure_path(parts.get(2), "Caminho do cofre:", true);
 
+            if let (Some(f), Some(v)) = (file, vault_path) {
+                let pass = get_password("Defina uma senha para o cofre:", parts.get(3));
                 if !pass.is_empty() {
-                    vault::secure_store(file, vault_path, &pass);
+                    vault::secure_store(f.to_str().unwrap(), v.to_str().unwrap(), &pass);
                     println!("{}", "✔ Arquivo protegido e armazenado no cofre".green());
                 } else {
                     println!("{}", "✖ Senha vazia ou erro ao processar senha".red());
                 }
-            } else {
-                println!("{}", "Uso: secure-copy <arquivo> <diretorio_vault> [senha]".yellow());
             }
         }
 
@@ -217,7 +218,7 @@ fn main() {
 
     println!(
         "{}",
-        "Nova versão! 🎉 KomodoSec v0.04 iniciado. Digite 'help'".bright_green()
+        "Solo-Secure v0.5.0 iniciado! 🛡️ Sub-sistema de Assistência de Caminhos ATIVO. Digite 'help'".bright_green()
     );
 
     loop {
