@@ -1,6 +1,7 @@
 mod cli;
 mod vault;
 mod crypto;
+mod log;
 mod path_assistant;
 
 use colored::*;
@@ -34,12 +35,10 @@ exit                       → sair
 }
 
 fn get_password(prompt_text: &str, provided_pass: Option<&&str>) -> String {
-    // 1. Tentar usar a senha fornecida via argumento
     if let Some(pass) = provided_pass {
         return pass.to_string();
     }
 
-    // 2. Tentar ler do stdin se não for um terminal (ex: echo "senha" | app)
     if !io::stdin().is_terminal() {
         let mut input = String::new();
         if io::stdin().read_line(&mut input).is_ok() {
@@ -47,7 +46,6 @@ fn get_password(prompt_text: &str, provided_pass: Option<&&str>) -> String {
         }
     }
 
-    // 3. Fallback para prompt interativo seguro
     Password::new(prompt_text)
         .without_confirmation()
         .prompt()
@@ -58,6 +56,7 @@ fn handle_command(parts: Vec<&str>) {
     match parts[0] {
         "isolate-directory" => {
             if let Some(dir) = path_assistant::ensure_path(parts.get(1), "Diretório para isolar:", true) {
+                log::info(&format!("Isolando diretório: {:?}", dir));
                 vault::isolate_directory(dir.to_str().unwrap());
             }
         }
@@ -71,6 +70,7 @@ fn handle_command(parts: Vec<&str>) {
             };
             
             if !path.as_os_str().is_empty() {
+                log::info(&format!("Criando cofre em: {:?}", path));
                 vault::create(path.to_str().unwrap());
                 println!("{}", "✔ Cofre criado".green());
             }
@@ -86,15 +86,20 @@ fn handle_command(parts: Vec<&str>) {
             };
 
             if let (Some(s), Some(d)) = (src, dst) {
+                log::info(&format!("Cópia segura: {:?} -> {:?}", s, d));
                 match vault::safe_copy(s.to_str().unwrap(), d.to_str().unwrap()) {
                     Ok(_) => println!("{}", "✔ Arquivo copiado".green()),
-                    Err(e) => eprintln!("{}", format!("✖ Erro: {}", e).red()),
+                    Err(e) => {
+                        log::error(&format!("Erro em safe-copy: {}", e));
+                        eprintln!("{}", format!("✖ Erro: {}", e).red());
+                    }
                 }
             }
         }
 
         "allow-write" => {
             if let Some(path) = path_assistant::ensure_path(parts.get(1), "Arquivo para liberar escrita:", false) {
+                log::info(&format!("Liberando escrita: {:?}", path));
                 vault::allow_write(path.to_str().unwrap());
                 println!("{}", "✔ Escrita liberada".green());
             }
@@ -103,6 +108,7 @@ fn handle_command(parts: Vec<&str>) {
         "read-directory" => {
             if let Some(dir) = path_assistant::ensure_path(parts.get(1), "Diretório para listar:", true) {
                 let dir_str = dir.to_str().unwrap();
+                log::info(&format!("Listando diretório: {}", dir_str));
                 let files = vault::read_directory(dir_str);
                 println!("{}", format!("📁 {}:", dir_str).blue());
                 for f in files {
@@ -116,9 +122,13 @@ fn handle_command(parts: Vec<&str>) {
             let file = path_assistant::ensure_path(parts.get(2), "Arquivo para adicionar:", false);
 
             if let (Some(v), Some(f)) = (vault_path, file) {
+                log::info(&format!("Adicionando arquivo {:?} ao cofre {:?}", f, v));
                 match vault::add_file(v.to_str().unwrap(), f.to_str().unwrap()) {
                     Ok(_) => println!("{}", "✔ Arquivo adicionado".green()),
-                    Err(e) => eprintln!("{}", format!("✖ Erro: {}", e).red()),
+                    Err(e) => {
+                        log::error(&format!("Erro em add-file: {}", e));
+                        eprintln!("{}", format!("✖ Erro: {}", e).red());
+                    }
                 }
             }
         }
@@ -132,18 +142,26 @@ fn handle_command(parts: Vec<&str>) {
             };
 
             if let (Some(v), Some(f)) = (vault_path, file) {
+                log::info(&format!("Removendo arquivo {} do cofre {:?}", f, v));
                 match vault::remove_file(v.to_str().unwrap(), &f) {
                     Ok(_) => println!("{}", "✔ Arquivo removido".green()),
-                    Err(e) => eprintln!("{}", format!("✖ Erro: {}", e).red()),
+                    Err(e) => {
+                        log::error(&format!("Erro em remove-file: {}", e));
+                        eprintln!("{}", format!("✖ Erro: {}", e).red());
+                    }
                 }
             }
         }
 
         "status" => {
             if let Some(vault_path) = path_assistant::ensure_path(parts.get(1), "Caminho do cofre:", true) {
+                log::info(&format!("Verificando status do cofre: {:?}", vault_path));
                 match vault::get_vault_status(vault_path.to_str().unwrap()) {
                     Ok(_) => (),
-                    Err(e) => eprintln!("{}", format!("✖ Erro: {}", e).red()),
+                    Err(e) => {
+                        log::error(&format!("Erro em status: {}", e));
+                        eprintln!("{}", format!("✖ Erro: {}", e).red());
+                    }
                 }
             }
         }
@@ -152,9 +170,13 @@ fn handle_command(parts: Vec<&str>) {
             if let Some(file) = path_assistant::ensure_path(parts.get(1), "Arquivo para criptografar:", false) {
                 let pass = get_password("Senha:", parts.get(2));
                 if !pass.is_empty() {
+                    log::info(&format!("Criptografando arquivo: {:?}", file));
                     match crypto::encrypt_file(&file, &pass) {
                         Ok(_) => println!("{}", "✔ Arquivo criptografado".green()),
-                        Err(e) => eprintln!("{}", format!("✖ Erro: {}", e).red()),
+                        Err(e) => {
+                            log::error(&format!("Erro em encrypt: {}", e));
+                            eprintln!("{}", format!("✖ Erro: {}", e).red());
+                        }
                     }
                 } else {
                     println!("{}", "✖ Senha vazia ou erro ao ler senha".red());
@@ -166,9 +188,13 @@ fn handle_command(parts: Vec<&str>) {
             if let Some(file) = path_assistant::ensure_path(parts.get(1), "Arquivo para descriptografar:", false) {
                 let pass = get_password("Senha:", parts.get(2));
                 if !pass.is_empty() {
+                    log::info(&format!("Descriptografando arquivo: {:?}", file));
                     match crypto::decrypt_file(&file, &pass) {
                         Ok(_) => println!("{}", "✔ Arquivo descriptografado".green()),
-                        Err(e) => eprintln!("{}", format!("✖ Erro: {}", e).red()),
+                        Err(e) => {
+                            log::error(&format!("Erro em decrypt: {}", e));
+                            eprintln!("{}", format!("✖ Erro: {}", e).red());
+                        }
                     }
                 } else {
                     println!("{}", "✖ Senha vazia ou erro ao ler senha".red());
@@ -183,6 +209,7 @@ fn handle_command(parts: Vec<&str>) {
             if let (Some(f), Some(v)) = (file, vault_path) {
                 let pass = get_password("Defina uma senha para o cofre:", parts.get(3));
                 if !pass.is_empty() {
+                    log::info(&format!("Secure-copy: {:?} para {:?}", f, v));
                     vault::secure_store(f.to_str().unwrap(), v.to_str().unwrap(), &pass);
                     println!("{}", "✔ Arquivo protegido e armazenado no cofre".green());
                 } else {
@@ -193,20 +220,23 @@ fn handle_command(parts: Vec<&str>) {
 
         "help" => {
             show_help();
-
             println!("{}", "Digite o número da pergunta (ou Enter para pular):".purple());
-
             let mut input = String::new();
             std::io::stdin().read_line(&mut input).unwrap();
-
             let answer = input.trim();
-
             if !answer.is_empty() {
                 cli::questions(answer);
             }
         }
 
+        "exit" => {
+            log::info("Aplicação encerrada pelo usuário.");
+            println!("{}", "Saindo...".yellow());
+            std::process::exit(0);
+        }
+
         _ => {
+            log::warn(&format!("Comando inválido: {}", parts[0]));
             println!("{}", format!("✖ Comando '{}' não existe.", parts[0]).red());
             println!("{}", "Digite 'help' para ver os comandos.".yellow());
         }
@@ -215,6 +245,7 @@ fn handle_command(parts: Vec<&str>) {
 
 fn main() {
     let mut rl = DefaultEditor::new().unwrap();
+    log::info("Aplicação iniciada.");
 
     println!(
         "{}",
@@ -222,29 +253,20 @@ fn main() {
     );
 
     loop {
-        let readline = rl.readline(&"KomodoSec> ".bright_blue().to_string());
+        let readline = rl.readline(&"SoloSecure> ".bright_blue().to_string());
 
         match readline {
             Ok(line) => {
                 rl.add_history_entry(line.as_str()).ok();
-
                 let input = line.trim();
-
                 if input.is_empty() {
                     continue;
                 }
-
-                if input == "exit" {
-                    println!("{}", "Saindo...".yellow());
-                    break;
-                }
-
                 let parts: Vec<&str> = input.split_whitespace().collect();
                 handle_command(parts);
             }
-
             Err(_) => {
-                println!("{}", "Erro na leitura".red());
+                log::error("Erro na leitura do terminal.");
                 break;
             }
         }
