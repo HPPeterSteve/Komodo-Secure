@@ -190,7 +190,7 @@ fn main() {
 
     println!(
         "{}",
-        "Solo-Sec v0.036alph iniciado. Digite 'help'".bright_green()
+        "Nova versão! 🎉 Solo-Sec v0.04 iniciado. Digite 'help'".bright_green()
     );
 
     loop {
