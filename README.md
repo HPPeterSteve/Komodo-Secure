@@ -1,4 +1,4 @@
-# 🔐 Solo-Secure v0.5.0
+# 🔐 Komodo-Secure v0.5.0
 
 > CLI de segurança em Rust para proteção, isolamento e gerenciamento seguro de arquivos, com foco em robustez e usabilidade.
 
