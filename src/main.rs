@@ -55,7 +55,6 @@ fn handle_command(parts: Vec<&str>) {
         "isolate-directory" => {
             if let Some(dir) = parts.get(1) {
                 vault::isolate_directory(dir);
-                println!("{}", "✔ Diretório isolado".green());
             } else {
                 println!("{}", "Uso: isolate-directory <dir>".yellow());
             }
@@ -190,11 +189,11 @@ fn main() {
 
     println!(
         "{}",
-        "Nova versão! 🎉 Solo-Sec v0.04 iniciado. Digite 'help'".bright_green()
+        "Nova versão! 🎉 KomodoSec v0.04 iniciado. Digite 'help'".bright_green()
     );
 
     loop {
-        let readline = rl.readline(&"solo-sec> ".bright_blue().to_string());
+        let readline = rl.readline(&"KomodoSec> ".bright_blue().to_string());
 
         match readline {
             Ok(line) => {

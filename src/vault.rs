@@ -9,11 +9,77 @@ use std::{
 #[allow(dead_code)]
 
 use std::io::Read;
+use std::ffi::{c_char, CString};
+#[warn(dead_code)]
 
 
-// é usado #[allow(dead_code)] para mitigar avisos de codigo não utilizado, tudo será orquestrado
-// diretamente ao main, e isso é intencional, pois o código é modularizado para facilitar a manutenção e a organização,
-// é má pratica escrever codigo que não seja orquestrado diretamente na main de arquivos únicos.
+unsafe extern "C" {
+    fn try_hard_isolate(path: *const c_char) -> bool;
+}
+
+pub fn isolate_directory(directory: &str) {
+    let home_dir = home::home_dir().unwrap_or_default();
+    let sandbox_path = home_dir.join("Komodo_SEC").join("sandbox");
+
+    let files = read_directory(directory);
+    let dir_sandbox = Path::new(&sandbox_path);
+
+    if !dir_sandbox.exists() {
+        if let Err(e) = std::fs::create_dir_all(&sandbox_path) {
+            eprintln!("Falha ao criar diretório sandbox: {}", e);
+            return;
+        }
+    }
+
+    let full_path = dir_sandbox.join(directory);
+    if !full_path.exists() {
+        if let Err(e) = std::fs::create_dir_all(&full_path) {
+            eprintln!("Falha ao criar subdiretório sandbox: {}", e);
+            return;
+        }
+    }
+
+    // Preparar caminho para FFI
+    let c_path = match CString::new(directory) {
+        Ok(p) => p,
+        Err(_) => {
+            eprintln!("Caminho inválido para FFI (contém byte nulo?)");
+            return;
+        }
+    };
+
+    println!("Tentando isolamento avançado (mount namespace + readonly)...");
+
+    let isolated = unsafe { try_hard_isolate(c_path.as_ptr()) };
+
+    if isolated {
+        println!("{}", "Isolamento forte aplicado (namespace + readonly)");
+    } else {
+        println!("{}", "Isolamento namespace falhou (provável falta de privilégio)");
+        println!("{}", "Aplicando isolamento básico (readonly)...");
+    }
+
+    // Listagem + fallback (seu código original)
+    println!("Isolando diretório {}", directory);
+    println!("Arquivos encontrados:");
+
+    for file in files {
+        println!(" - {}", file);
+    }
+
+    if let Ok(metadata) = fs::metadata(directory) {
+        let mut permission = metadata.permissions();
+        permission.set_readonly(true);
+        if let Err(e) = fs::set_permissions(directory, permission) {
+            eprintln!("Falha ao aplicar permissão readonly: {}", e);
+        } else {
+            println!("{}", "Permissão readonly aplicada com sucesso (fallback)");
+        }
+    } else {
+        eprintln!("Não foi possível ler metadados do diretório");
+    }
+}
+// ... outras funções ...
 
 
 #[allow(dead_code)]
@@ -167,15 +233,13 @@ pub fn secure_store(src: &str, vault: &str, password: &str) {
     // 4. Criptografamos a cópia do arquivo dentro do cofre. A função encrypt_file criará um novo arquivo .enc
     // e manterá o original (não criptografado) no mesmo local.
     crate::crypto::encrypt_file(&destination_in_vault, password);
-
-    // 5. Removemos a cópia não criptografada do arquivo que está dentro do cofre.
-    // O arquivo criptografado (com extensão .enc) permanecerá.
     let _ = fs::remove_file(&destination_in_vault);
-
-    // 6. Removemos o arquivo original da sua localização inicial.
     let _ = fs::remove_file(source);
+
+
 }
 #[allow(dead_code)]
+
 // nessa função, é necessario ler e examinar a lista de arquivos
 // precisamos garantir que os arquivos estão dentro do diretorio.
 
@@ -210,39 +274,6 @@ pub fn read_directory(directory: &str) -> Vec<String> {
     files
 }  
 
-
-
-#[allow(dead_code)]
-pub fn isolate_directory(directory: &str) {
-let home_dir = home::home_dir().unwrap();
-let sandbox_path = home_dir.join("Solo_SEC").join("sandbox");
-
-    let files = read_directory(directory);
-    let dir_sandbox = Path::new(&sandbox_path);
-
-    if !dir_sandbox.exists() {
-        std::fs::create_dir_all(&sandbox_path).expect("Failed to create sandbox directory");
-    }
-
-    let full_path = dir_sandbox.join(directory);
-    if !full_path.exists() {
-        std::fs::create_dir_all(&full_path).expect("Failed to create sandbox subdirectory");
-    }
-
-    println!("Isolando diretório {}", directory);
-    println!("Arquivos encontrados:");
-
-    for file in files {
-        println!(" - {}", file);
-    }
-    let mut permission = fs::metadata(directory)
-        .expect("Failed to get metadata")
-        .permissions();
-
-        permission.set_readonly(true);
-        fs::set_permissions(directory, permission).expect("Failure permission");
-}
-
 #[allow(dead_code)]
 
 pub fn allow_write(path: &str) {
@@ -271,10 +302,12 @@ pub fn allow_write(path: &str) {
         .open(&file_exists)
         .expect("Falha ao abrir arquivo para escrita");
 
-    writeln!(_file, "Permissão de escrita concedida para {}", path)
+    writeln!(_file, "{}", path)
         .expect("Falha ao escrever no arquivo");
 
 }
+
+
 #[allow(dead_code)]
 pub fn delete_sandbox<P: AsRef<Path>>(directory: P) -> std::result::Result<(), std::io::Error> {
     let info_files = directory.as_ref();
@@ -288,10 +321,12 @@ pub fn delete_sandbox<P: AsRef<Path>>(directory: P) -> std::result::Result<(), s
             );
         }
     } else {
+
         eprintln!(
             "Sandbox não encontrada ou não é um diretório: {}",
             info_files.display()
         );
+
     }
 
     Ok(())
@@ -302,4 +337,5 @@ pub fn help() {
     println!("Commands:");
     println!("create-vault <path>");
     println!("add-file <vault> <file>");
+
 }
