@@ -11,6 +11,7 @@
 #include <errno.h>
 #include <string.h>
 #include <fcntl.h>
+#include <limits.h>
 #include <seccomp.h>          // libseccomp
 
 static int pivot_root(const char *new_root, const char *put_old) {
@@ -136,3 +137,6 @@ bool try_hard_isolate(const char *app_path) {
         // continue mesmo assim
     }
 
+
+    return true;
+}

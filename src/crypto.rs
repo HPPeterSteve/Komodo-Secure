@@ -25,15 +25,9 @@ fn derive_key_from_password(password: &str, salt: &[u8]) -> [u8; 32] {
 }
 
 /// Criptografa um arquivo usando AES-256-GCM + PBKDF2
-pub fn encrypt_file(path: &Path, password: &str) {
+pub fn encrypt_file(path: &Path, password: &str) -> Result<(), Box<dyn std::error::Error>> {
     // 1. Ler dados
-    let data = match fs::read(path) {
-        Ok(d) => d,
-        Err(e) => {
-            eprintln!("Erro ao ler arquivo: {}", e);
-            return;
-        }
-    };
+    let data = fs::read(path)?;
 
     // 2. Gerar salt e derivar chave
     let mut salt = [0u8; SALT_LEN];
@@ -41,17 +35,11 @@ pub fn encrypt_file(path: &Path, password: &str) {
     let key_bytes = derive_key_from_password(password, &salt);
 
     // 3. Inicializar cifra e gerar nonce
-    let cipher = Aes256Gcm::new_from_slice(&key_bytes).expect("Chave inválida");
+    let cipher = Aes256Gcm::new_from_slice(&key_bytes).map_err(|_| "Chave inválida")?;
     let nonce = Aes256Gcm::generate_nonce(&mut OsRng);
 
     // 4. Criptografar
-    let encrypted = match cipher.encrypt(&nonce, data.as_ref()) {
-        Ok(c) => c,
-        Err(e) => {
-            eprintln!("Erro na criptografia: {}", e);
-            return;
-        }
-    };
+    let encrypted = cipher.encrypt(&nonce, data.as_ref()).map_err(|e| format!("Erro na criptografia: {}", e))?;
 
     // 5. Salvar: SALT (16 bytes) + NONCE (12 bytes) + CIPHERTEXT
     let mut final_data = Vec::new();
@@ -60,28 +48,19 @@ pub fn encrypt_file(path: &Path, password: &str) {
     final_data.extend_from_slice(&encrypted);
 
     let new_path = path.with_extension("enc");
-    if let Err(e) = fs::write(&new_path, final_data) {
-        eprintln!("Erro ao salvar arquivo: {}", e);
-    } else {
-        println!("Arquivo criptografado salvo em: {:?}", new_path);
-    }
+    fs::write(&new_path, final_data)?;
+    println!("Arquivo criptografado salvo em: {:?}", new_path);
+    Ok(())
 }
 #[allow(dead_code)]
 /// Descriptografa um arquivo criptografado com `encrypt_file`
-pub fn decrypt_file(path: &Path, password: &str) {
+pub fn decrypt_file(path: &Path, password: &str) -> Result<(), Box<dyn std::error::Error>> {
     // 1. Ler arquivo
-    let data = match fs::read(path) {
-        Ok(d) => d,
-        Err(e) => {
-            eprintln!("Erro ao ler arquivo criptografado: {}", e);
-            return;
-        }
-    };
+    let data = fs::read(path)?;
 
     // 2. Verificar tamanho mínimo (SALT + NONCE)
     if data.len() < SALT_LEN + 12 {
-        eprintln!("Erro: Arquivo corrompido ou muito pequeno.");
-        return;
+        return Err("Erro: Arquivo corrompido ou muito pequeno.".into());
     }
 
     // 3. Extrair salt, nonce e ciphertext
@@ -91,23 +70,15 @@ pub fn decrypt_file(path: &Path, password: &str) {
 
     // 4. Derivar chave
     let key_bytes = derive_key_from_password(password, salt);
-    let cipher = Aes256Gcm::new_from_slice(&key_bytes).expect("Chave inválida");
+    let cipher = Aes256Gcm::new_from_slice(&key_bytes).map_err(|_| "Chave inválida")?;
 
     // 5. Descriptografar
-    let decrypted = match cipher.decrypt(nonce, ciphertext) {
-        Ok(d) => d,
-        Err(e) => {
-            eprintln!("Erro na descriptografia: {}", e);
-            return;
-        }
-    };
+    let decrypted = cipher.decrypt(nonce, ciphertext).map_err(|e| format!("Erro na descriptografia: {}", e))?;
 
     // 6. Salvar arquivo restaurado
     let new_path = path.with_extension("dec");
-    if let Err(e) = fs::write(&new_path, decrypted) {
-        eprintln!("Erro ao salvar arquivo descriptografado: {}", e);
-    } else {
-        println!("Arquivo descriptografado salvo em: {:?}", new_path);
-    }
+    fs::write(&new_path, decrypted)?;
+    println!("Arquivo descriptografado salvo em: {:?}", new_path);
+    Ok(())
 }
 

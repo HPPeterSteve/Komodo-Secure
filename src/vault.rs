@@ -118,7 +118,6 @@ pub fn create(dir: &str) {
         eprintln!("Erro ao criar cofre: {}", e);
         return;
     } else {
-         let _path_not_specified = "C:/Users/Pedro/Desktop/Solo_SEC/sandbox/default_vault";
          println!("Cofre criado com sucesso em {}", dir);
     }
     println!("Criando cofre em {}", dir);
@@ -217,22 +216,19 @@ pub fn secure_store(src: &str, vault: &str, password: &str) {
     };
     let destination = vault_path.join(file_name);
 
-    // 3. Primeiro copiamos o arquivo para dentro do cofre com segurança
+    // 3. Copiamos o arquivo original para o cofre com segurança
     if let Err(e) = safe_copy(source, &destination) {
         eprintln!("Erro ao copiar arquivo para o cofre: {}", e);
         return;
     }
-
-    // 3. Copiamos o arquivo original para o cofre
-    let destination_in_vault = vault_path.join(file_name);
-    if let Err(e) = safe_copy(source, &destination_in_vault) {
-        eprintln!("Erro ao copiar arquivo para o cofre: {}", e);
-        return;
-    }
+    let destination_in_vault = destination;
 
     // 4. Criptografamos a cópia do arquivo dentro do cofre. A função encrypt_file criará um novo arquivo .enc
     // e manterá o original (não criptografado) no mesmo local.
-    crate::crypto::encrypt_file(&destination_in_vault, password);
+    if let Err(e) = crate::crypto::encrypt_file(&destination_in_vault, password) {
+        eprintln!("Erro ao criptografar arquivo no cofre: {}", e);
+        return;
+    }
     let _ = fs::remove_file(&destination_in_vault);
     let _ = fs::remove_file(source);
 
@@ -295,16 +291,6 @@ pub fn allow_write(path: &str) {
     permission.set_readonly(false);
 
     fs::set_permissions(path, permission).expect("Falha ao setar permissão de escrita");
-
-    let mut _file = OpenOptions::new()
-
-        .write(true)
-        .open(&file_exists)
-        .expect("Falha ao abrir arquivo para escrita");
-
-    writeln!(_file, "{}", path)
-        .expect("Falha ao escrever no arquivo");
-
 }
 
 
@@ -312,13 +298,9 @@ pub fn allow_write(path: &str) {
 pub fn delete_sandbox<P: AsRef<Path>>(directory: P) -> std::result::Result<(), std::io::Error> {
     let info_files = directory.as_ref();
     if info_files.exists() && (info_files).is_dir() {
-        std::fs::remove_dir_all(info_files)?;
-        println!(" OSandbox deletada com sucesso: {}", info_files.display());
-        {
-            eprintln!(
-                "Não foi possivel deletar diretório: {}",
-                info_files.display()
-            );
+        match std::fs::remove_dir_all(info_files) {
+            Ok(_) => println!(" Sandbox deletada com sucesso: {}", info_files.display()),
+            Err(e) => eprintln!("Não foi possivel deletar diretório: {}: {}", info_files.display(), e),
         }
     } else {
 

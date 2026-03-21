@@ -120,8 +120,10 @@ fn handle_command(parts: Vec<&str>) {
                 if !pass.is_empty() {
                     let current_dir = std::env::current_dir().expect("Falha ao obter diretório atual");
                     let full_path = current_dir.join(file);
-                    crypto::encrypt_file(&full_path, &pass);
-                    println!("{}", "✔ Arquivo criptografado".green());
+                    match crypto::encrypt_file(&full_path, &pass) {
+                        Ok(_) => println!("{}", "✔ Arquivo criptografado".green()),
+                        Err(e) => eprintln!("{}", format!("✖ Erro: {}", e).red()),
+                    }
                 } else {
                     println!("{}", "✖ Senha vazia ou erro ao ler senha".red());
                 }
@@ -137,8 +139,10 @@ fn handle_command(parts: Vec<&str>) {
                 if !pass.is_empty() {
                     let current_dir = std::env::current_dir().expect("Falha ao obter diretório atual");
                     let full_path = current_dir.join(file);
-                    crypto::decrypt_file(&full_path, &pass);
-                    println!("{}", "✔ Arquivo descriptografado".green());
+                    match crypto::decrypt_file(&full_path, &pass) {
+                        Ok(_) => println!("{}", "✔ Arquivo descriptografado".green()),
+                        Err(e) => eprintln!("{}", format!("✖ Erro: {}", e).red()),
+                    }
                 } else {
                     println!("{}", "✖ Senha vazia ou erro ao ler senha".red());
                 }
