@@ -259,11 +259,11 @@ fn main() {
 
     println!(
         "{}",
-        "Solo-Secure v0.5.1 iniciado! 🛡️ Sub-sistema de Assistência de Caminhos ATIVO. Digite 'help'".bright_green()
+        "Komodo-Secure v0.5.2 iniciado! 🛡️ Sub-sistema de Assistência de Caminhos ATIVO. Digite 'help'".bright_green()
     );
 
     loop {
-        let readline = rl.readline(&"SoloSecure> ".bright_blue().to_string());
+        let readline = rl.readline(&"KomodoSec> ".bright_blue().to_string());
 
         match readline {
             Ok(line) => {
