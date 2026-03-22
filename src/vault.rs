@@ -272,28 +272,6 @@ pub fn read_directory(directory: &str) -> Vec<String> {
 
 #[allow(dead_code)]
 
-pub fn allow_write(path: &str) {
-    // nota é preciso declarar o arquivo antes de verificar se ele existe, para evitar erros de permissão.
-   
-    // ou criar ele e depois checar se existe
-    let file_exists = std::path::Path::new(path);
-    if !file_exists.exists() {
-        println!("Arquivo não encontrado: {}", path);
-
-        return;
-    }
-    let _path_write = fs::metadata(&file_exists);
-    let mut permission = fs::metadata(&file_exists)
-      
-        .expect("Falha ao conseguir metadata")
-        .permissions();
-
-    permission.set_readonly(false);
-
-    fs::set_permissions(path, permission).expect("Falha ao setar permissão de escrita");
-}
-
-
 #[allow(dead_code)]
 pub fn delete_sandbox<P: AsRef<Path>>(directory: P) -> std::result::Result<(), std::io::Error> {
     let info_files = directory.as_ref();
