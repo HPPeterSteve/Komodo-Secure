@@ -1,4 +1,5 @@
 # 🔐 Komodo-Secure v0.5.0
+_confiável, compacto e seguro_
 
 > CLI de segurança em Rust para proteção, isolamento e gerenciamento seguro de arquivos, com foco em robustez e usabilidade.
 
