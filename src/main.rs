@@ -106,13 +106,6 @@ fn handle_command(parts: Vec<&str>) {
             }
         }
 
-        "allow-write" => {
-            if let Some(path) = path_assistant::ensure_path(parts.get(1), "Arquivo para liberar escrita:", false) {
-                log::info(&format!("Liberando escrita: {:?}", path));
-                vault::allow_write(path.to_str().unwrap());
-                println!("{}", "✔ Escrita liberada".green());
-            }
-        }
 
         "read-directory" => {
             if let Some(dir) = path_assistant::ensure_path(parts.get(1), "Diretório para listar:", true) {
