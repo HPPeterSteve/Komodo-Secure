@@ -1,4 +1,31 @@
 # 🔐 Komodo-Secure v0.5.0
+_reliable, compact, and secure_
+
+> Rust-based security CLI for file protection, isolation, and secure management, focused on robustness and usability.
+
+## 🚀 Overview
+
+**Komodo-Secure** is a command-line interface (CLI) tool focused on:
+
+* Creating and managing secure vaults
+* Secure encryption with AES-256-GCM
+* Safe copy operations and directory isolation
+* Permission control
+
+Designed with focus on **security, simplicity, and extensibility**.
+
+## ⚙️ Installation
+
+### Download Executable (Linux x86_64)
+
+For the fastest installation, you can download the pre-compiled binary:
+
+```bash
+wget https://github.com/HPPeterSteve/Solo-Secure/releases/download/v0.5.0/Solo_sec_v0.5.0_linux_amd64 -O komodo_sec
+chmod +x komodo_sec
+sudo mv komodo_sec /usr/local/bin/
+
+# 🔐 Komodo-Secure v0.5.0
 _confiável, compacto e seguro_
 
 > CLI de segurança em Rust para proteção, isolamento e gerenciamento seguro de arquivos, com foco em robustez e usabilidade.
