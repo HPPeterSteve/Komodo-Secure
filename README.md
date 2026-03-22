@@ -150,3 +150,146 @@ MIT License
 Desenvolvido por Peter
 ## ⭐ Se esse projeto te ajudou
 Considere dar uma estrela no repositório!
+
+🔐 Komodo-Secure v0.5.0
+reliable, compact, and secure
+
+Rust-based security CLI for file protection, isolation, and secure management, focused on robustness and usability.
+
+🚀 Overview
+Komodo-Secure is a command-line interface (CLI) tool focused on:
+
+Creating and managing secure vaults
+Secure encryption with AES-256-GCM
+Safe copy operations and directory isolation
+Permission control Designed with focus on security, simplicity, and extensibility.
+⚙️ Installation
+Download Executable (Linux x86_64)
+For the fastest installation, you can download the pre-compiled binary:
+
+wget https://github.com/HPPeterSteve/Solo-Secure/releases/download/v0.5.0/Solo_sec_v0.5.0_linux_amd64 -O komodo_sec
+chmod +x komodo_sec
+sudo mv komodo_sec /usr/local/bin/
+# 🔐 Komodo-Secure v0.5.0
+_reliable, compact, and secure_
+> Security CLI in Rust for file protection, isolation, and secure management, with a focus on robustness and usability.
+## 🚀 Overview
+**Komodo-Secure** is a command-line tool (CLI) focused on:
+* Creation and management of file vaults
+* Secure encryption with AES-256-GCM
+* Safe copy and isolation operations
+* Permission control
+Designed with a focus on **security, simplicity, and extensibility**.
+## ⚙️ Installation
+### Executable Download (Linux x86_64)
+For the fastest installation, you can download the precompiled binary:
+```bash
+wget https://github.com/HPPeterSteve/Solo-Secure/releases/download/v0.5.0/Solo_sec_v0.5.0_linux_amd64 -O komodo_sec
+chmod +x komodo_sec
+sudo mv komodo_sec /usr/local/bin/
+After installation, the command will be available globally in your terminal.komodo_sec
+
+Prerequisites (for compiling source code)
+Rust (via rustup)
+Recommended Linux (Ubuntu 22.04+)
+libseccomp-dev (for the sandbox in C)
+Clone and build (from source)
+git clone https://github.com/HPPeterSteve/Solo-Secure.git
+cd Komodo-Secure
+cargo build --release
+Binary generated in:
+
+target/release/Komodo_sec
+📦 Commands
+Command	Description
+create-vault <path>	Create a new vault
+add-file <vault> <file>	Add file to vault
+safe-copy <src> <dst>	Secure copy (atomicity)
+allow-write <file>	Release writing
+read-directory <dir>	List of files
+isolate-directory <dir>	Isola directory
+secure-copy <file> <vault>	Encrypts and moves to vault
+encrypt <file> [senha]	Encrypts file
+decrypt <file> [senha]	Decrypts file
+status <vault>	Displays vault statistics
+remove-file <vault> <file>	Remove file from vault
+help	Help
+exit	Exit
+🔐 Encryption
+Algorithm: AES-256-GCM
+Key Tap: PBKDF2 (SHA-256)
+Random salt per operation
+Unique Nonce by cryptography
+🔄 Fluxo
+plaintext → derivação de chave → AES-256-GCM → arquivo .enc
+🔑 Password Entry (Smart Mode)
+The system uses fallback at three levels:
+
+CLI Argument
+encrypt arquivo.txt senha123
+STDIN (Automation)
+echo "senha123" | Solo_sec encrypt arquivo.txt
+Interactive Secure Prompt
+⚠️ Safety Notice
+Passwords via argument may appear in the terminal history
+Recommended for production:
+echo "senha" | Solo_sec encrypt arquivo.txt
+🧪 Tests
+Integrity test
+Solo_sec encrypt arquivo.txt senha
+Solo_sec decrypt arquivo.enc senha
+diff arquivo.txt arquivo.dec
+Expected result:
+
+Integridade confirmada
+🛡️ Security and Improvements (v0.5.0)
+This release brings a leap in usability and traceability:
+
+Path Assistant subsystem:
+Fuzzy Matching: If you type in a wrong path, the system suggests the closest file using the Levenshtein distance.
+Interactivity: Intelligent prompts that guide the user in case arguments or paths are missing.
+Structured Logging System: All operations (successes, warnings, and errors) are recorded in the file with accurate timestamps.solo_secure.log
+Seccomp Filters in the Sandbox: Reinforced directory isolation in the C component to block critical system calls.
+Refined UX: More user-friendly CLI interface with full library integration.inquire
+🛡️ Security and Enhancements (v0.4.0)
+Seccomp Filters in the Sandbox: Introduction of isolation via seccomp.
+Improved Error Handling: Clearer user feedback.
+New Commands: Addition of and .statusremove-file
+🧠 Architecture
+Separation of responsibilities:
+
+CLI (main)
+  ↓
+Crypto (criptografia)
+  ↓
+Vault (armazenamento)
+Principles
+Each module does a single function
+Decoupled file system encryption
+CLI only orchestrates operations
+🧪 Futuro / Roadmap
+ Migration to Argon2
+ Plugin support
+ Fuzz testing (cargo fuzz)
+ Test Coverage (Tarpaulin)
+ Structured logs
+ Environment Variable Support for Password
+🤝 Contribution
+Contributions are welcome!
+
+How to contribute
+Project fork
+Create a branch (feature/minha-feature)
+Commit your changes
+Open a Pull Request
+📄 License
+MIT License
+
+💡 Philosophy
+Security is not just encryption. It is control, predictability and trust in the system.
+
+👨 💻 Author
+Developed by Peter
+
+⭐ If this project helped you
+Consider giving the repository a star!
