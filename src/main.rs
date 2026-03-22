@@ -9,6 +9,15 @@ use inquire::Password;
 use rustyline::DefaultEditor;
 use std::io::{self, IsTerminal};
 use std::path::PathBuf;
+use nix::unistd::Uid;
+
+fn check_root() {
+    if !Uid::effective().is_root() {
+        eprintln!("{}", "✖ Erro: Este programa deve ser executado como root (sudo).".red());
+        eprintln!("{}", "O Solo-Secure requer privilégios elevados para gerenciar o isolamento do sandbox e namespaces.".yellow());
+        std::process::exit(1);
+    }
+}
 
 fn show_help() {
     println!(
@@ -244,12 +253,13 @@ fn handle_command(parts: Vec<&str>) {
 }
 
 fn main() {
+    check_root();
     let mut rl = DefaultEditor::new().unwrap();
     log::info("Aplicação iniciada.");
 
     println!(
         "{}",
-        "Solo-Secure v0.5.0 iniciado! 🛡️ Sub-sistema de Assistência de Caminhos ATIVO. Digite 'help'".bright_green()
+        "Solo-Secure v0.5.1 iniciado! 🛡️ Sub-sistema de Assistência de Caminhos ATIVO. Digite 'help'".bright_green()
     );
 
     loop {
