@@ -38,14 +38,14 @@ Após a instalação, o comando `komodo_sec` estará disponível globalmente no 
 
 ```bash
 git clone https://github.com/HPPeterSteve/Solo-Secure.git
-cd Solo-Secure
+cd Komodo-Secure
 cargo build --release
 ```
 
 Binário gerado em:
 
 ```bash
-target/release/Solo_sec
+target/release/Komodo_sec
 ```
 
 ## 📦 Comandos
