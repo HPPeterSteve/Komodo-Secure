@@ -1,9 +1,9 @@
-#[warn(dead_code)]
 use std::env;
-#[allow(dead_code)]
 use std::io::Write;
 use std::{
- fs::{self, /*metadata, */ OpenOptions}, io::{BufReader, BufWriter}, path::{Path, PathBuf}
+    fs,
+    io::{BufReader, BufWriter},
+    path::{Path, PathBuf},
 };
 
 #[allow(dead_code)]
