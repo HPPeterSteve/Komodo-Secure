@@ -25,7 +25,7 @@ pub fn log(level: LogLevel, message: &str) {
     if let Ok(mut file) = OpenOptions::new()
         .create(true)
         .append(true)
-        .open("solo_secure.log")
+        .open("komodo_secure.log")
     {
         let _ = file.write_all(log_entry.as_bytes());
     }
