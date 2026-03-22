@@ -1,397 +1,155 @@
 # 🔐 Komodo-Secure v0.5.0
 _reliable, compact, and secure_
-
-> Rust-based security CLI for file protection, isolation, and secure management — focused on robustness and usability.
-
-[![English](https://img.shields.io/badge/English-README.md-blue)](README.md)
-[![Português](https://img.shields.io/badge/Português-README.pt.md-green)](README.pt.md)
-[![Español](https://img.shields.io/badge/Español-README.es.md-yellow)](README.es.md)
-
+> Rust-based security CLI for file protection, isolation, and secure management, focused on robustness and usability.
 ## 🚀 Overview
-
-**Komodo-Secure** is a command-line tool designed for:
-- Creating and managing secure file vaults
-- Strong AES-256-GCM encryption
-- Safe atomic file copy operations
-- Directory isolation with hardening
-- Permission management
-
-Built with security, simplicity, and extensibility in mind.
-
+**Komodo-Secure** is a command-line interface (CLI) tool focused on:
+* Creating and managing secure vaults
+* Secure encryption with AES-256-GCM
+* Safe copy operations and directory isolation
+* Permission control
+Designed with focus on **security, simplicity, and extensibility**.
 ## ⚙️ Installation
-
-### Quick Install (Pre-built Binary – Linux x86_64)
-
+### Download Executable (Linux x86_64)
+For the fastest installation, you can download the pre-compiled binary:
 ```bash
 wget https://github.com/HPPeterSteve/Solo-Secure/releases/download/v0.5.0/Solo_sec_v0.5.0_linux_amd64 -O komodo_sec
 chmod +x komodo_sec
-sudo mv komodo_sec /usr/local/bin/komodo_sec
-Now run komodo_sec from anywhere.
-Build from Source
-Prerequisites:
-
-Rust (install via rustup.rs)
-Linux recommended (Ubuntu 22.04+)
-libseccomp-dev (for enhanced C sandbox)
-
-Bashgit clone https://github.com/HPPeterSteve/Solo-Secure.git
-cd Solo-Secure
-cargo build --release
-Binary: target/release/komodo_sec
-📦 Commands
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-CommandDescriptioncreate-vault <path>Create a new vaultadd-file <vault> <file>Add file to vaultsafe-copy <src> <dst>Secure atomic copyallow-write <file>Grant write permissionread-directory <dir>List files in directoryisolate-directory <dir>Isolate directory (readonly + namespace)secure-copy <file> <vault> [pass]Encrypt & store in vaultencrypt <file> [pass]Encrypt filedecrypt <file> [pass]Decrypt filestatus <vault>Show vault statisticsremove-file <vault> <file>Remove file from vaulthelpShow helpexitExit interactive mode
-🔐 Cryptography
-
-Algorithm: AES-256-GCM
-Key Derivation: PBKDF2 (SHA-256)
-Random salt per operation
-Unique nonce per encryption
-
-🔑 Password Input
-Smart fallback:
-
-Command-line argument
-Stdin (scripts)
-Interactive secure prompt
-
-Warning: Avoid arguments for production passwords.
-🛡️ v0.5.0 Highlights
-
-Path Assistant (fuzzy matching + suggestions)
-Structured logging (solo_secure.log)
-Seccomp filters in C sandbox
-Improved UX with inquire
-
-📄 License
-MIT
-👨‍💻 Author
-Peter
-⭐ Give it a star if you like it!
-text### 2. README.pt.md (Português)
-
-```markdown
+sudo mv komodo_sec /usr/local/bin/
 # 🔐 Komodo-Secure v0.5.0
 _confiável, compacto e seguro_
-
-> CLI de segurança em Rust para proteção, isolamento e gerenciamento seguro de arquivos — foco em robustez e usabilidade.
-
-[![English](https://img.shields.io/badge/English-README.md-blue)](README.md)
-[![Português](https://img.shields.io/badge/Português-README.pt.md-green)](README.pt.md)
-[![Español](https://img.shields.io/badge/Español-README.es.md-yellow)](README.es.md)
-
+> CLI de segurança em Rust para proteção, isolamento e gerenciamento seguro de arquivos, com foco em robustez e usabilidade.
 ## 🚀 Visão Geral
-
-O **Komodo-Secure** é uma ferramenta de linha de comando para:
-- Criação e gerenciamento de cofres seguros
-- Criptografia forte AES-256-GCM
-- Cópias atômicas seguras
-- Isolamento de diretórios reforçado
-- Controle de permissões
-
-Projetado com ênfase em segurança, simplicidade e extensibilidade.
-
+O **Komodo-Secure** é uma ferramenta de linha de comando (CLI) focada em:
+* Criação e gerenciamento de cofres de arquivos
+* Criptografia segura com AES-256-GCM
+* Operações seguras de cópia e isolamento
+* Controle de permissões
+Projetado com foco em **segurança, simplicidade e extensibilidade**.
 ## ⚙️ Instalação
-
-### Instalação Rápida (Binário Pré-compilado – Linux x86_64)
-
+### Download do Executável (Linux x86_64)
+Para a instalação mais rápida, você pode baixar o binário pré-compilado:
 ```bash
 wget https://github.com/HPPeterSteve/Solo-Secure/releases/download/v0.5.0/Solo_sec_v0.5.0_linux_amd64 -O komodo_sec
 chmod +x komodo_sec
-sudo mv komodo_sec /usr/local/bin/komodo_sec
-Execute komodo_sec de qualquer lugar.
-Compilação do Fonte
-Pré-requisitos:
-
-Rust (instale via rustup.rs)
-Linux recomendado (Ubuntu 22.04+)
-libseccomp-dev (para sandbox em C reforçado)
-
-Bashgit clone https://github.com/HPPeterSteve/Solo-Secure.git
-cd Solo-Secure
-cargo build --release
-Binário: target/release/komodo_sec
-📦 Comandos
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-ComandoDescriçãocreate-vault <caminho>Cria um novo cofreadd-file <cofre> <arquivo>Adiciona arquivo ao cofresafe-copy <origem> <destino>Cópia segura e atômicaallow-write <arquivo>Libera permissão de escritaread-directory <dir>Lista arquivos no diretórioisolate-directory <dir>Isola diretório (somente leitura + namespace)secure-copy <arquivo> <cofre> [senha]Criptografa e armazena no cofreencrypt <arquivo> [senha]Criptografa arquivodecrypt <arquivo> [senha]Descriptografa arquivostatus <cofre>Mostra estatísticas do cofreremove-file <cofre> <arquivo>Remove arquivo do cofrehelpMostra ajudaexitSai do modo interativo
-🔐 Criptografia
-
-Algoritmo: AES-256-GCM
-Derivação de chave: PBKDF2 (SHA-256)
-Salt aleatório por operação
-Nonce único por criptografia
-
-🔑 Entrada de Senha
-Modo inteligente:
-
-Argumento na linha de comando
-stdin (para scripts)
-Prompt interativo seguro
-
-Aviso: Evite senhas como argumento em produção.
-🛡️ Novidades v0.5.0
-
-Assistente de caminhos (fuzzy + sugestões)
-Logs estruturados (solo_secure.log)
-Filtros Seccomp no sandbox em C
-Interface mais amigável com inquire
-
-📄 Licença
-MIT
-👨‍💻 Autor
-Peter
-⭐ Dá uma estrela se curtiu!
-text### 3. README.es.md (Espanhol)
-
-```markdown
-# 🔐 Komodo-Secure v0.5.0
-_confiable, compacto y seguro_
-
-> CLI de seguridad basado en Rust para protección, aislamiento y gestión segura de archivos — enfocado en robustez y usabilidad.
-
-[![English](https://img.shields.io/badge/English-README.md-blue)](README.md)
-[![Português](https://img.shields.io/badge/Português-README.pt.md-green)](README.pt.md)
-[![Español](https://img.shields.io/badge/Español-README.es.md-yellow)](README.es.md)
-
-## 🚀 Visión General
-
-**Komodo-Secure** es una herramienta de línea de comandos para:
-- Crear y gestionar bóvedas seguras
-- Cifrado fuerte AES-256-GCM
-- Copias atómicas seguras
-- Aislamiento de directorios reforzado
-- Gestión de permisos
-
-Diseñada con énfasis en seguridad, simplicidad y extensibilidad.
-
-## ⚙️ Instalación
-
-### Instalación Rápida (Binario Precompilado – Linux x86_64)
-
+sudo mv komodo_sec /usr/local/bin/
+```
+Após a instalação, o comando `komodo_sec` estará disponível globalmente no seu terminal.
+### Pré-requisitos (para compilação do código-fonte)
+* Rust (via rustup)
+* Linux recomendado (Ubuntu 22.04+)
+* `libseccomp-dev` (para o sandbox em C)
+### Clone e build (do código-fonte)
 ```bash
-wget https://github.com/HPPeterSteve/Solo-Secure/releases/download/v0.5.0/Solo_sec_v0.5.0_linux_amd64 -O komodo_sec
-chmod +x komodo_sec
-sudo mv komodo_sec /usr/local/bin/komodo_sec
-Ejecuta komodo_sec desde cualquier lugar.
-Compilación desde Fuente
-Requisitos:
-
-Rust (instala vía rustup.rs)
-Linux recomendado (Ubuntu 22.04+)
-libseccomp-dev (para sandbox en C reforzado)
-
-Bashgit clone https://github.com/HPPeterSteve/Solo-Secure.git
-cd Solo-Secure
+git clone https://github.com/HPPeterSteve/Solo-Secure.git
+cd Komodo-Secure
 cargo build --release
-Binario: target/release/komodo_sec
-📦 Comandos
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-ComandoDescripcióncreate-vault <ruta>Crea una nueva bóvedaadd-file <bóveda> <archivo>Añade archivo a la bóvedasafe-copy <origen> <destino>Copia segura y atómicaallow-write <archivo>Permite escrituraread-directory <dir>Lista archivos en el directorioisolate-directory <dir>Aísla directorio (solo lectura + namespace)secure-copy <archivo> <bóveda> [pass]Cifra y almacena en la bóvedaencrypt <archivo> [pass]Cifra archivodecrypt <archivo> [pass]Descifra archivostatus <bóveda>Muestra estadísticas de la bóvedaremove-file <bóveda> <archivo>Elimina archivo de la bóvedahelpMuestra ayudaexitSale del modo interactivo
-🔐 Criptografía
-
-Algoritmo: AES-256-GCM
-Derivación de clave: PBKDF2 (SHA-256)
-Salt aleatorio por operación
-Nonce único por cifrado
-
-🔑 Entrada de Contraseña
-Modo inteligente:
-
-Argumento en línea de comandos
-stdin (para scripts)
-Prompt interactivo seguro
-
-Advertencia: Evita contraseñas como argumento en producción.
-🛡️ Novedades v0.5.0
-
-Asistente de rutas (coincidencia fuzzy + sugerencias)
-Logs estructurados (solo_secure.log)
-Filtros Seccomp en sandbox C
-Interfaz mejorada con inquire
-
-📄 Licencia
-MIT
-👨‍💻 Autor
-Peter
-⭐ ¡Dale una estrella si te gustó!
-text
+```
+Binário gerado em:
+```bash
+target/release/Komodo_sec
+```
+## 📦 Comandos
+| Comando | Descrição |
+| :--------------------------- | :------------------------------ |
+| `create-vault <path>` | Cria um novo cofre |
+| `add-file <vault> <file>` | Adiciona arquivo ao cofre |
+| `safe-copy <src> <dst>` | Cópia segura (atomicidade) |
+| `allow-write <file>` | Libera escrita |
+| `read-directory <dir>` | Lista arquivos |
+| `isolate-directory <dir>` | Isola diretório |
+| `secure-copy <file> <vault>` | Criptografa e move para o cofre |
+| `encrypt <file> [senha]` | Criptografa arquivo |
+| `decrypt <file> [senha]` | Descriptografa arquivo |
+| `status <vault>` | Exibe estatísticas do cofre |
+| `remove-file <vault> <file>` | Remove arquivo do cofre |
+| `help` | Ajuda |
+| `exit` | Sair |
+## 🔐 Criptografia
+* Algoritmo: **AES-256-GCM**
+* Derivação de chave: **PBKDF2 (SHA-256)**
+* Salt aleatório por operação
+* Nonce único por criptografia
+### 🔄 Fluxo
+```
+plaintext → derivação de chave → AES-256-GCM → arquivo .enc
+```
+## 🔑 Entrada de Senha (Modo Inteligente)
+O sistema utiliza fallback em três níveis:
+1. **Argumento CLI**
+    ```bash
+    encrypt arquivo.txt senha123
+    ```
+2. **stdin (automação)**
+    ```bash
+    echo "senha123" | Solo_sec encrypt arquivo.txt
+    ```
+3. **Prompt seguro interativo**
+### ⚠️ Aviso de Segurança
+* Senhas via argumento podem aparecer no histórico do terminal
+* Recomendado para produção:
+    ```bash
+    echo "senha" | Solo_sec encrypt arquivo.txt
+    ```
+## 🧪 Testes
+### Teste de integridade
+```bash
+Solo_sec encrypt arquivo.txt senha
+Solo_sec decrypt arquivo.enc senha
+diff arquivo.txt arquivo.dec
+```
+Resultado esperado:
+```
+Integridade confirmada
+```
+## 🛡️ Segurança e Melhorias (v0.5.0)
+Esta versão traz um salto em **usabilidade** e **rastreabilidade**:
+* **Sub-sistema de Assistência de Caminhos (Path Assistant)**:
+    * **Fuzzy Matching**: Se você digitar um caminho errado, o sistema sugere o arquivo mais próximo usando a distância de Levenshtein.
+    * **Interatividade**: Prompts inteligentes que guiam o usuário caso faltem argumentos ou caminhos.
+* **Sistema de Logs Estruturado**: Todas as operações (sucessos, avisos e erros) são registradas no arquivo `solo_secure.log` com timestamps precisos.
+* **Filtros Seccomp no Sandbox**: Isolamento de diretórios reforçado no componente em C para bloquear chamadas de sistema críticas.
+* **UX Refinada**: Interface CLI mais amigável com integração total da biblioteca `inquire`.
+---
+## 🛡️ Segurança e Melhorias (v0.4.0)
+* **Filtros Seccomp no Sandbox**: Introdução do isolamento via seccomp.
+* **Tratamento de Erros Aprimorado**: Feedback mais claro ao usuário.
+* **Novos Comandos**: Adição de `status` e `remove-file`.
+## 🧠 Arquitetura
+Separação de responsabilidades:
+```
+CLI (main)
+  ↓
+Crypto (criptografia)
+  ↓
+Vault (armazenamento)
+```
+### Princípios
+* Cada módulo faz **uma única função**
+* Criptografia desacoplada do sistema de arquivos
+* CLI apenas orquestra operações
+## 🧪 Futuro / Roadmap
+* [ ] Migração para Argon2
+* [ ] Suporte a plugins
+* [ ] Fuzz testing (cargo fuzz)
+* [ ] Cobertura de testes (tarpaulin)
+* [ ] Logs estruturados
+* [ ] Suporte a variáveis de ambiente para senha
+## 🤝 Contribuição
+Contribuições são bem-vindas!
+### Como contribuir
+1. Fork do projeto
+2. Crie uma branch (`feature/minha-feature`)
+3. Commit suas mudanças
+4. Abra um Pull Request
+## 📄 Licença
+MIT License
+## 💡 Filosofia
+> Segurança não é só criptografia.
+> É controle, previsibilidade e confiança no sistema.
+## 👨‍💻 Autor
+Desenvolvido por Peter
+## ⭐ Se esse projeto te ajudou
+Considere dar uma estrela no repositório!
+ 
+ 
+ 
