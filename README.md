@@ -1,15 +1,25 @@
-# 🔐 Solo-Secure v0.5.0
+# 🔐 Solo-Secure v0.5.1
 
 > CLI de segurança em Rust para proteção, isolamento e gerenciamento seguro de arquivos, com foco em robustez e usabilidade.
+
+## ⚠️ **Aviso Importante: Execução como Root**
+
+O Solo-Secure **requer privilégios de root (sudo)** para operar corretamente. Isso se deve à sua capacidade de gerenciar o isolamento de diretórios e aplicar filtros de segurança avançados (seccomp) que protegem o sistema de arquivos. Tentar executar o programa sem `sudo` resultará em um erro e o encerramento da aplicação.
+
+```bash
+sudo Solo_sec
+```
+
+---
 
 ## 🚀 Visão Geral
 
 O **Solo-Secure** é uma ferramenta de linha de comando (CLI) focada em:
 
-* Criação e gerenciamento de cofres de arquivos
-* Criptografia segura com AES-256-GCM
-* Operações seguras de cópia e isolamento
-* Controle de permissões
+*   Criação e gerenciamento de cofres de arquivos
+*   Criptografia segura com AES-256-GCM
+*   Operações seguras de cópia e isolamento
+*   Controle de permissões
 
 Projetado com foco em **segurança, simplicidade e extensibilidade**.
 
@@ -20,7 +30,7 @@ Projetado com foco em **segurança, simplicidade e extensibilidade**.
 Para a instalação mais rápida, você pode baixar o binário pré-compilado:
 
 ```bash
-wget https://github.com/HPPeterSteve/Solo-Secure/releases/download/v0.5.0/Solo_sec_v0.5.0_linux_amd64 -O Solo_sec
+wget https://github.com/HPPeterSteve/Solo-Secure/releases/download/v0.5.1/Solo_sec_v0.5.1_linux_amd64 -O Solo_sec
 chmod +x Solo_sec
 sudo mv Solo_sec /usr/local/bin/
 ```
@@ -67,10 +77,10 @@ target/release/Solo_sec
 
 ## 🔐 Criptografia
 
-* Algoritmo: **AES-256-GCM**
-* Derivação de chave: **PBKDF2 (SHA-256)**
-* Salt aleatório por operação
-* Nonce único por criptografia
+*   Algoritmo: **AES-256-GCM**
+*   Derivação de chave: **PBKDF2 (SHA-256)**
+*   Salt aleatório por operação
+*   Nonce único por criptografia
 
 ### 🔄 Fluxo
 
@@ -105,26 +115,11 @@ O sistema utiliza fallback em três níveis:
     echo "senha" | Solo_sec encrypt arquivo.txt
     ```
 
-## 🧪 Testes
+## 🛡️ Segurança e Melhorias (v0.5.1)
 
-### Teste de integridade
+Esta versão traz um salto em **usabilidade**, **rastreabilidade** e **segurança**:
 
-```bash
-Solo_sec encrypt arquivo.txt senha
-Solo_sec decrypt arquivo.enc senha
-diff arquivo.txt arquivo.dec
-```
-
-Resultado esperado:
-
-```
-Integridade confirmada
-```
-
-## 🛡️ Segurança e Melhorias (v0.5.0)
-
-Esta versão traz um salto em **usabilidade** e **rastreabilidade**:
-
+*   **Obrigatoriedade de Root**: O programa agora exige privilégios de root para execução, garantindo que as operações de segurança e isolamento funcionem corretamente.
 *   **Sub-sistema de Assistência de Caminhos (Path Assistant)**: 
     *   **Fuzzy Matching**: Se você digitar um caminho errado, o sistema sugere o arquivo mais próximo usando a distância de Levenshtein.
     *   **Interatividade**: Prompts inteligentes que guiam o usuário caso faltem argumentos ou caminhos.
@@ -133,12 +128,6 @@ Esta versão traz um salto em **usabilidade** e **rastreabilidade**:
 *   **UX Refinada**: Interface CLI mais amigável com integração total da biblioteca `inquire`.
 
 ---
-
-## 🛡️ Segurança e Melhorias (v0.4.0)
-
-*   **Filtros Seccomp no Sandbox**: Introdução do isolamento via seccomp.
-*   **Tratamento de Erros Aprimorado**: Feedback mais claro ao usuário.
-*   **Novos Comandos**: Adição de `status` e `remove-file`.
 
 ## 🧠 Arquitetura
 
@@ -164,7 +153,6 @@ Vault (armazenamento)
 *   [ ] Suporte a plugins
 *   [ ] Fuzz testing (cargo fuzz)
 *   [ ] Cobertura de testes (tarpaulin)
-*   [ ] Logs estruturados
 *   [ ] Suporte a variáveis de ambiente para senha
 
 ## 🤝 Contribuição
@@ -194,3 +182,190 @@ Desenvolvido por Peter
 ## ⭐ Se esse projeto te ajudou
 
 Considere dar uma estrela no repositório!
+
+---
+
+# 🇬🇧 Solo-Secure v0.5.1 (English Version)
+
+> Rust security CLI for secure file protection, isolation, and management, focusing on robustness and usability.
+
+## ⚠️ **Important Notice: Root Execution Required**
+
+Solo-Secure **requires root privileges (sudo)** to operate correctly. This is due to its ability to manage directory isolation and apply advanced security filters (seccomp) that protect the file system. Attempting to run the program without `sudo` will result in an error and application termination.
+
+```bash
+sudo Solo_sec
+```
+
+---
+
+## 🚀 Overview
+
+**Solo-Secure** is a command-line interface (CLI) tool focused on:
+
+*   Creating and managing file vaults
+*   Secure encryption with AES-256-GCM
+*   Secure copy and isolation operations
+*   Permission control
+
+Designed with a focus on **security, simplicity, and extensibility**.
+
+## ⚙️ Installation
+
+### Executable Download (Linux x86_64)
+
+For the fastest installation, you can download the pre-compiled binary:
+
+```bash
+wget https://github.com/HPPeterSteve/Solo-Secure/releases/download/v0.5.1/Solo_sec_v0.5.1_linux_amd64 -O Solo_sec
+chmod +x Solo_sec
+sudo mv Solo_sec /usr/local/bin/
+```
+
+After installation, the `Solo_sec` command will be globally available in your terminal.
+
+### Prerequisites (for source code compilation)
+
+*   Rust (via rustup)
+*   Recommended OS: Linux (Ubuntu 22.04+)
+*   `libseccomp-dev` (for the C sandbox component)
+
+### Clone and Build (from source)
+
+```bash
+git clone https://github.com/HPPeterSteve/Solo-Secure.git
+cd Solo-Secure
+cargo build --release
+```
+
+Binary generated at:
+
+```bash
+target/release/Solo_sec
+```
+
+## 📦 Commands
+
+| Command                      | Description                       |
+| :--------------------------- | :-------------------------------- |
+| `create-vault <path>`        | Creates a new vault               |
+| `add-file <vault> <file>`    | Adds a file to the vault          |
+| `safe-copy <src> <dst>`      | Secure copy (atomicity)           |
+| `allow-write <file>`         | Enables write permissions         |
+| `read-directory <dir>`       | Lists files in a directory        |
+| `isolate-directory <dir>`    | Isolates a directory              |
+| `secure-copy <file> <vault>` | Encrypts and moves to vault       |
+| `encrypt <file> [password]`  | Encrypts a file                   |
+| `decrypt <file> [password]`  | Decrypts a file                   |
+| `status <vault>`             | Displays vault statistics         |
+| `remove-file <vault> <file>` | Removes a file from the vault     |
+| `help`                       | Displays help                     |
+| `exit`                       | Exits the application             |
+
+## 🔐 Encryption
+
+*   Algorithm: **AES-256-GCM**
+*   Key derivation: **PBKDF2 (SHA-256)**
+*   Random salt per operation
+*   Unique nonce per encryption
+
+### 🔄 Flow
+
+```
+plaintext → key derivation → AES-256-GCM → .enc file
+```
+
+## 🔑 Password Input (Smart Mode)
+
+The system uses a three-level fallback:
+
+1.  **CLI Argument**
+
+    ```bash
+    encrypt file.txt password123
+    ```
+
+2.  **stdin (automation)**
+
+    ```bash
+    echo "password123" | Solo_sec encrypt file.txt
+    ```
+
+3.  **Secure interactive prompt**
+
+### ⚠️ Security Warning
+
+*   Passwords via argument may appear in terminal history
+*   Recommended for production:
+
+    ```bash
+    echo "password" | Solo_sec encrypt file.txt
+    ```
+
+## 🛡️ Security and Improvements (v0.5.1)
+
+This version brings a leap in **usability**, **traceability**, and **security**:
+
+*   **Root Requirement**: The program now requires root privileges for execution, ensuring that security and isolation operations function correctly.
+*   **Path Assistant Subsystem**: 
+    *   **Fuzzy Matching**: If you type a wrong path, the system suggests the closest file using Levenshtein distance.
+    *   **Interactivity**: Smart prompts guide the user if arguments are missing or paths are incorrect.
+*   **Structured Logging System**: All operations (successes, warnings, and errors) are logged to `solo_secure.log` with precise timestamps.
+*   **Seccomp Filters in Sandbox**: Reinforced directory isolation in the C component to block critical system calls.
+*   **Refined UX**: More user-friendly CLI with full integration of the `inquire` library.
+
+---
+
+## 🧠 Architecture
+
+Separation of responsibilities:
+
+```
+CLI (main)
+  ↓
+Crypto (encryption)
+  ↓
+Vault (storage)
+```
+
+### Principles
+
+*   Each module performs **a single function**
+*   Encryption decoupled from the file system
+*   CLI only orchestrates operations
+
+## 🧪 Future / Roadmap
+
+*   [ ] Migration to Argon2
+*   [ ] Plugin support
+*   [ ] Fuzz testing (cargo fuzz)
+*   [ ] Test coverage (tarpaulin)
+*   [ ] Environment variable support for passwords
+
+## 🤝 Contribution
+
+Contributions are welcome!
+
+### How to contribute
+
+1.  Fork the project
+2.  Create a branch (`feature/my-feature`)
+3.  Commit your changes
+4.  Open a Pull Request
+
+## 📄 License
+
+MIT License
+
+## 💡 Philosophy
+
+> Security is not just encryption.
+> It's control, predictability, and trust in the system.
+
+## 👨‍💻 Author
+
+Developed by Peter
+
+## ⭐ If this project helped you
+
+Consider starring the repository!
