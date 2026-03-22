@@ -21,12 +21,12 @@ Projetado com foco em **segurança, simplicidade e extensibilidade**.
 Para a instalação mais rápida, você pode baixar o binário pré-compilado:
 
 ```bash
-wget https://github.com/HPPeterSteve/Solo-Secure/releases/download/v0.5.0/Solo_sec_v0.5.0_linux_amd64 -O Solo_sec
-chmod +x Solo_sec
-sudo mv Solo_sec /usr/local/bin/
+wget https://github.com/HPPeterSteve/Solo-Secure/releases/download/v0.5.0/Solo_sec_v0.5.0_linux_amd64 -O komodo_sec
+chmod +x komodo_sec
+sudo mv komodo_sec /usr/local/bin/
 ```
 
-Após a instalação, o comando `Solo_sec` estará disponível globalmente no seu terminal.
+Após a instalação, o comando `komodo_sec` estará disponível globalmente no seu terminal.
 
 ### Pré-requisitos (para compilação do código-fonte)
 
