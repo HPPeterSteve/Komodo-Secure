@@ -1,3 +1,189 @@
+# 🇬🇧 Komodo-Secure v0.5.2 (English Version)
+
+> Rust security CLI for secure file protection, isolation, and management, focusing on robustness and usability.
+
+## ⚠️ **Important Notice: Root Execution Required**
+
+Komodo-Secure **requires root privileges (sudo)** to operate correctly. This is due to its ability to manage directory isolation and apply advanced security filters (seccomp) that protect the file system. Attempting to run the program without `sudo` will result in an error and application termination.
+
+```bash
+sudo Komodo_sec
+```
+
+---
+
+## 🚀 Overview
+
+**Komodo-Secure** is a command-line interface (CLI) tool focused on:
+
+*   Creating and managing file vaults
+*   Secure encryption with AES-256-GCM
+*   Secure copy and isolation operations
+*   Permission control
+
+Designed with a focus on **security, simplicity, and extensibility**.
+
+## ⚙️ Installation
+
+### Executable Download (Linux x86_64)
+
+For the fastest installation, you can download the pre-compiled binary:
+
+```bash
+wget https://github.com/HPPeterSteve/Komodo-Secure/releases/download/v0.5.2/Komodo_sec_v0.5.2_linux_amd64 -O Komodo_sec
+chmod +x Komodo_sec
+sudo mv Komodo_sec /usr/local/bin/
+```
+
+After installation, the `Komodo_sec` command will be globally available in your terminal.
+
+### Prerequisites (for source code compilation)
+
+*   Rust (via rustup)
+*   Recommended OS: Linux (Ubuntu 22.04+)
+*   `libseccomp-dev` (for the C sandbox component)
+
+### Clone and Build (from source)
+
+```bash
+git clone https://github.com/HPPeterSteve/Komodo-Secure.git
+cd Komodo-Secure
+cargo build --release
+```
+
+Binary generated at:
+
+```bash
+target/release/Komodo_sec
+```
+
+## 📦 Commands
+
+| Command                      | Description                       |
+| :--------------------------- | :-------------------------------- |
+| `create-vault <path>`        | Creates a new vault               |
+| `add-file <vault> <file>`    | Adds a file to the vault          |
+| `safe-copy <src> <dst>`      | Secure copy (atomicity)           |
+| `allow-write <file>`         | Enables write permissions         |
+| `read-directory <dir>`       | Lists files in a directory        |
+| `isolate-directory <dir>`    | Isolates a directory              |
+| `secure-copy <file> <vault>` | Encrypts and moves to vault       |
+| `encrypt <file> [password]`  | Encrypts a file                   |
+| `decrypt <file> [password]`  | Decrypts a file                   |
+| `status <vault>`             | Displays vault statistics         |
+| `remove-file <vault> <file>` | Removes a file from the vault     |
+| `help`                       | Displays help                     |
+| `exit`                       | Exits the application             |
+
+## 🔐 Encryption
+
+*   Algorithm: **AES-256-GCM**
+*   Key derivation: **PBKDF2 (SHA-256)**
+*   Random salt per operation
+*   Unique nonce per encryption
+
+### 🔄 Flow
+
+```
+plaintext → key derivation → AES-256-GCM → .enc file
+```
+
+## 🔑 Password Input (Smart Mode)
+
+The system uses a three-level fallback:
+
+1.  **CLI Argument**
+
+    ```bash
+    encrypt file.txt password123
+    ```
+
+2.  **stdin (automation)**
+
+    ```bash
+    echo "password123" | Komodo_sec encrypt file.txt
+    ```
+
+3.  **Secure interactive prompt**
+
+### ⚠️ Security Warning
+
+*   Passwords via argument may appear in terminal history
+*   Recommended for production:
+
+    ```bash
+    echo "password" | Komodo_sec encrypt file.txt
+    ```
+
+## 🛡️ Security and Improvements (v0.5.2)
+
+This version brings a leap in **usability**, **traceability**, and **security**:
+
+*   **Rebranding to Komodo-Secure**: The project has been renamed from Solo-Secure to Komodo-Secure.
+*   **Root Requirement**: The program now requires root privileges for execution, ensuring that security and isolation operations function correctly.
+*   **Path Assistant Subsystem**: 
+    *   **Fuzzy Matching**: If you type a wrong path, the system suggests the closest file using Levenshtein distance.
+    *   **Interactivity**: Smart prompts guide the user if arguments are missing or paths are incorrect.
+*   **Structured Logging System**: All operations (successes, warnings, and errors) are logged to `komodo_secure.log` with precise timestamps.
+*   **Seccomp Filters in Sandbox**: Reinforced directory isolation in the C component to block critical system calls.
+*   **Refined UX**: More user-friendly CLI with full integration of the `inquire` library.
+
+---
+
+## 🧠 Architecture
+
+Separation of responsibilities:
+
+```
+CLI (main)
+  ↓
+Crypto (encryption)
+  ↓
+Vault (storage)
+```
+
+### Principles
+
+*   Each module performs **a single function**
+*   Encryption decoupled from the file system
+*   CLI only orchestrates operations
+
+## 🧪 Future / Roadmap
+
+*   [ ] Migration to Argon2
+*   [ ] Plugin support
+*   [ ] Fuzz testing (cargo fuzz)
+*   [ ] Test coverage (tarpaulin)
+*   [ ] Environment variable support for passwords
+
+## 🤝 Contribution
+
+Contributions are welcome!
+
+### How to contribute
+
+1.  Fork the project
+2.  Create a branch (`feature/my-feature`)
+3.  Commit your changes
+4.  Open a Pull Request
+
+## 📄 License
+
+MIT License
+
+## 💡 Philosophy
+
+> Security is not just encryption.
+> It's control, predictability, and trust in the system.
+
+## 👨‍💻 Author
+
+Developed by Peter
+
+## ⭐ If this project helped you
+
+Consider starring the repository!
+
 # 🔐 Komodo-Secure v0.5.2
 
 > CLI de segurança em Rust para proteção, isolamento e gerenciamento seguro de arquivos, com foco em robustez e usabilidade.
@@ -186,188 +372,3 @@ Considere dar uma estrela no repositório!
 
 ---
 
-# 🇬🇧 Komodo-Secure v0.5.2 (English Version)
-
-> Rust security CLI for secure file protection, isolation, and management, focusing on robustness and usability.
-
-## ⚠️ **Important Notice: Root Execution Required**
-
-Komodo-Secure **requires root privileges (sudo)** to operate correctly. This is due to its ability to manage directory isolation and apply advanced security filters (seccomp) that protect the file system. Attempting to run the program without `sudo` will result in an error and application termination.
-
-```bash
-sudo Komodo_sec
-```
-
----
-
-## 🚀 Overview
-
-**Komodo-Secure** is a command-line interface (CLI) tool focused on:
-
-*   Creating and managing file vaults
-*   Secure encryption with AES-256-GCM
-*   Secure copy and isolation operations
-*   Permission control
-
-Designed with a focus on **security, simplicity, and extensibility**.
-
-## ⚙️ Installation
-
-### Executable Download (Linux x86_64)
-
-For the fastest installation, you can download the pre-compiled binary:
-
-```bash
-wget https://github.com/HPPeterSteve/Komodo-Secure/releases/download/v0.5.2/Komodo_sec_v0.5.2_linux_amd64 -O Komodo_sec
-chmod +x Komodo_sec
-sudo mv Komodo_sec /usr/local/bin/
-```
-
-After installation, the `Komodo_sec` command will be globally available in your terminal.
-
-### Prerequisites (for source code compilation)
-
-*   Rust (via rustup)
-*   Recommended OS: Linux (Ubuntu 22.04+)
-*   `libseccomp-dev` (for the C sandbox component)
-
-### Clone and Build (from source)
-
-```bash
-git clone https://github.com/HPPeterSteve/Komodo-Secure.git
-cd Komodo-Secure
-cargo build --release
-```
-
-Binary generated at:
-
-```bash
-target/release/Komodo_sec
-```
-
-## 📦 Commands
-
-| Command                      | Description                       |
-| :--------------------------- | :-------------------------------- |
-| `create-vault <path>`        | Creates a new vault               |
-| `add-file <vault> <file>`    | Adds a file to the vault          |
-| `safe-copy <src> <dst>`      | Secure copy (atomicity)           |
-| `allow-write <file>`         | Enables write permissions         |
-| `read-directory <dir>`       | Lists files in a directory        |
-| `isolate-directory <dir>`    | Isolates a directory              |
-| `secure-copy <file> <vault>` | Encrypts and moves to vault       |
-| `encrypt <file> [password]`  | Encrypts a file                   |
-| `decrypt <file> [password]`  | Decrypts a file                   |
-| `status <vault>`             | Displays vault statistics         |
-| `remove-file <vault> <file>` | Removes a file from the vault     |
-| `help`                       | Displays help                     |
-| `exit`                       | Exits the application             |
-
-## 🔐 Encryption
-
-*   Algorithm: **AES-256-GCM**
-*   Key derivation: **PBKDF2 (SHA-256)**
-*   Random salt per operation
-*   Unique nonce per encryption
-
-### 🔄 Flow
-
-```
-plaintext → key derivation → AES-256-GCM → .enc file
-```
-
-## 🔑 Password Input (Smart Mode)
-
-The system uses a three-level fallback:
-
-1.  **CLI Argument**
-
-    ```bash
-    encrypt file.txt password123
-    ```
-
-2.  **stdin (automation)**
-
-    ```bash
-    echo "password123" | Komodo_sec encrypt file.txt
-    ```
-
-3.  **Secure interactive prompt**
-
-### ⚠️ Security Warning
-
-*   Passwords via argument may appear in terminal history
-*   Recommended for production:
-
-    ```bash
-    echo "password" | Komodo_sec encrypt file.txt
-    ```
-
-## 🛡️ Security and Improvements (v0.5.2)
-
-This version brings a leap in **usability**, **traceability**, and **security**:
-
-*   **Rebranding to Komodo-Secure**: The project has been renamed from Solo-Secure to Komodo-Secure.
-*   **Root Requirement**: The program now requires root privileges for execution, ensuring that security and isolation operations function correctly.
-*   **Path Assistant Subsystem**: 
-    *   **Fuzzy Matching**: If you type a wrong path, the system suggests the closest file using Levenshtein distance.
-    *   **Interactivity**: Smart prompts guide the user if arguments are missing or paths are incorrect.
-*   **Structured Logging System**: All operations (successes, warnings, and errors) are logged to `komodo_secure.log` with precise timestamps.
-*   **Seccomp Filters in Sandbox**: Reinforced directory isolation in the C component to block critical system calls.
-*   **Refined UX**: More user-friendly CLI with full integration of the `inquire` library.
-
----
-
-## 🧠 Architecture
-
-Separation of responsibilities:
-
-```
-CLI (main)
-  ↓
-Crypto (encryption)
-  ↓
-Vault (storage)
-```
-
-### Principles
-
-*   Each module performs **a single function**
-*   Encryption decoupled from the file system
-*   CLI only orchestrates operations
-
-## 🧪 Future / Roadmap
-
-*   [ ] Migration to Argon2
-*   [ ] Plugin support
-*   [ ] Fuzz testing (cargo fuzz)
-*   [ ] Test coverage (tarpaulin)
-*   [ ] Environment variable support for passwords
-
-## 🤝 Contribution
-
-Contributions are welcome!
-
-### How to contribute
-
-1.  Fork the project
-2.  Create a branch (`feature/my-feature`)
-3.  Commit your changes
-4.  Open a Pull Request
-
-## 📄 License
-
-MIT License
-
-## 💡 Philosophy
-
-> Security is not just encryption.
-> It's control, predictability, and trust in the system.
-
-## 👨‍💻 Author
-
-Developed by Peter
-
-## ⭐ If this project helped you
-
-Consider starring the repository!
