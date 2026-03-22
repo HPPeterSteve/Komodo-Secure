@@ -4,7 +4,7 @@
 
 ## 🚀 Visão Geral
 
-O **Solo-Secure** é uma ferramenta de linha de comando (CLI) focada em:
+O **Komodo-Secure** é uma ferramenta de linha de comando (CLI) focada em:
 
 * Criação e gerenciamento de cofres de arquivos
 * Criptografia segura com AES-256-GCM
