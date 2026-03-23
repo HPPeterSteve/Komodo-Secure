@@ -14,7 +14,7 @@ sudo ./target/release/komodo-secure
 
 ## ✨ Novidades na Versão GUI
 
-- **Interface Gráfica Nativa**: Substituímos a CLI por uma interface intuitiva usando `egui`.
+- **Interface Gráfica Nativa**: Substituímos a CLI por uma interface intuitiva usando `egui`, agora com **todas as funcionalidades da CLI original integradas**.
 - **Monitor de Recursos**: Uma aba dedicada para visualizar o uso de CPU e Memória RAM do seu sistema.
 - **Explorador de Arquivos**: Uma segunda aba para listar e gerenciar arquivos localmente.
 - **Segurança Reforçada**: Integração direta com o sub-sistema de isolamento e criptografia AES-256-GCM.
@@ -34,13 +34,18 @@ sudo apt-get install -y libwayland-dev libx11-dev libxkbcommon-dev libegl1-mesa-
 
 O executável para Linux está disponível após a compilação em `target/release/komodo-secure`.
 
-## 🛠️ Funcionalidades
+## 🛠️ Funcionalidades (Todas acessíveis via GUI)
 
 ### 1. Aba Principal (Segurança)
-- **Criar Cofre**: Inicializa um diretório seguro para seus arquivos.
-- **Adicionar Arquivo**: Move arquivos para dentro do cofre protegido.
-- **Criptografar/Descriptografar**: Proteção de arquivos com senha usando criptografia de nível militar (AES-256-GCM).
-- **Isolar Diretório**: Aplica restrições de sandbox e permissões somente-leitura.
+- **Criar Cofre**: Inicializa um diretório seguro para seus arquivos (`create-vault`).
+- **Adicionar Arquivo**: Move arquivos para dentro do cofre protegido (`add-file`).
+- **Remover Arquivo**: Remove um arquivo do cofre (`remove-file`).
+- **Status do Cofre**: Exibe informações sobre o cofre (`status`).
+- **Criptografar/Descriptografar**: Proteção de arquivos com senha usando criptografia de nível militar (AES-256-GCM) (`encrypt`, `decrypt`).
+- **Secure Copy**: Copia e criptografa um arquivo para um cofre (`secure-copy`).
+- **Isolar Diretório**: Aplica restrições de sandbox e permissões somente-leitura (`isolate-directory`).
+- **Cópia Segura**: Realiza uma cópia atômica de arquivos (`safe-copy`).
+- **Listar Diretório**: Lista arquivos em um diretório (`read-directory`).
 
 ### 2. Monitor de Recursos
 - Visualização em tempo real do uso de cada núcleo da CPU.
@@ -60,7 +65,7 @@ O executável para Linux está disponível após a compilação em `target/relea
 
 Se desejar compilar manualmente:
 
-1. Instale o Rust: `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`
+1. Instale o Rust: `curl --proto =https --tlsv1.2 -sSf https://sh.rustup.rs | sh`
 2. Clone o repositório.
 3. Execute: `cargo build --release`
 
