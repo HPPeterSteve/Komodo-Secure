@@ -1,17 +1,10 @@
-use std::env;
-use std::io::Write;
+use std::io::{Read, Write};
 use std::{
     fs,
     io::{BufReader, BufWriter},
     path::{Path, PathBuf},
 };
-
-#[allow(dead_code)]
-
-use std::io::Read;
 use std::ffi::{c_char, CString};
-#[warn(dead_code)]
-
 
 unsafe extern "C" {
     fn try_hard_isolate(path: *const c_char) -> bool;
@@ -39,7 +32,6 @@ pub fn isolate_directory(directory: &str) {
         }
     }
 
-    // Preparar caminho para FFI
     let c_path = match CString::new(directory) {
         Ok(p) => p,
         Err(_) => {
@@ -53,13 +45,12 @@ pub fn isolate_directory(directory: &str) {
     let isolated = unsafe { try_hard_isolate(c_path.as_ptr()) };
 
     if isolated {
-        println!("{}", "Isolamento forte aplicado (namespace + readonly)");
+        println!("Isolamento forte aplicado (namespace + readonly)");
     } else {
-        println!("{}", "Isolamento namespace falhou (provável falta de privilégio)");
-        println!("{}", "Aplicando isolamento básico (readonly)...");
+        println!("Isolamento namespace falhou (provável falta de privilégio)");
+        println!("Aplicando isolamento básico (readonly)...");
     }
 
-    // Listagem + fallback (seu código original)
     println!("Isolando diretório {}", directory);
     println!("Arquivos encontrados:");
 
@@ -73,43 +64,10 @@ pub fn isolate_directory(directory: &str) {
         if let Err(e) = fs::set_permissions(directory, permission) {
             eprintln!("Falha ao aplicar permissão readonly: {}", e);
         } else {
-            println!("{}", "Permissão readonly aplicada com sucesso (fallback)");
+            println!("Permissão readonly aplicada com sucesso (fallback)");
         }
     } else {
         eprintln!("Não foi possível ler metadados do diretório");
-    }
-}
-// ... outras funções ...
-
-
-#[allow(dead_code)]
-pub struct Args {
-    pub command: String,
-    pub path: String,
-    pub file: String,
-}
-
-#[allow(dead_code)]
-
-// A função get_args é responsável por coletar os argumentos de linha de comando fornecidos pelo usuário.
-// essa função é essencial para politica de usabilidade deste programa.
-
-pub fn get_args() -> Args {
-    let args: Vec<String> = env::args().collect();
-
-    if args.len() < 2 {
-        help();
-        std::process::exit(0);
-    }
-
-    let command = args.get(1).unwrap_or(&"".to_string()).clone();
-    let path = args.get(2).unwrap_or(&"".to_string()).clone();
-    let file = args.get(3).unwrap_or(&"".to_string()).clone();
-
-    Args {
-        command,
-        path,
-        file,
     }
 }
 
@@ -118,17 +76,14 @@ pub fn create(dir: &str) {
         eprintln!("Erro ao criar cofre: {}", e);
         return;
     } else {
-         println!("Cofre criado com sucesso em {}", dir);
+        println!("Cofre criado com sucesso em {}", dir);
     }
-    println!("Criando cofre em {}", dir);
-   }
-#[allow(dead_code)]   
+}
+
 pub fn add_file(vault: &str, file: &str) -> Result<(), Box<dyn std::error::Error>> {
     let vault_path = Path::new(vault);
     let file_path = Path::new(file);
 
-    // validações básicas
-    
     if !vault_path.exists() {
         eprintln!("Cofre não encontrado: {}", vault);
         return Ok(());
@@ -139,15 +94,12 @@ pub fn add_file(vault: &str, file: &str) -> Result<(), Box<dyn std::error::Error
         return Ok(());
     }
 
-    // pega só o nome do arquivo (segurança)
-    
     let file_name = file_path
         .file_name()
         .ok_or("Falha ao obter nome do arquivo")?;
 
     let destination: PathBuf = vault_path.join(file_name);
 
-    // evita sobrescrever sem querer
     if destination.exists() {
         eprintln!("Arquivo já existe no cofre: {}", destination.display());
         return Ok(());
@@ -164,8 +116,7 @@ pub fn add_file(vault: &str, file: &str) -> Result<(), Box<dyn std::error::Error
     Ok(())
 }
 
-#[allow(dead_code)]
-pub fn safe_copy<P: AsRef<Path>>(src: P, dstn: P) -> core::result::Result<(), Box<dyn std::error::Error>> {
+pub fn safe_copy<P: AsRef<Path>>(src: P, dstn: P) -> Result<(), Box<dyn std::error::Error>> {
     let source_path = src.as_ref();
     let destination_path = dstn.as_ref();
 
@@ -176,7 +127,7 @@ pub fn safe_copy<P: AsRef<Path>>(src: P, dstn: P) -> core::result::Result<(), Bo
 
     let temporary_file = fs::File::create(&temporary_path)?;
     let mut writer = BufWriter::new(temporary_file);
-    // vai até o ultimo byte
+    
     let mut buffer = [0u8; 65536];
     loop {
         let bytes_read = origin_file.read(&mut buffer)?;
@@ -184,22 +135,17 @@ pub fn safe_copy<P: AsRef<Path>>(src: P, dstn: P) -> core::result::Result<(), Bo
             break;
         }
         writer.write_all(&buffer[..bytes_read])?;
-
-    } writer.flush()?;
+    }
+    writer.flush()?;
 
     fs::rename(&temporary_path, destination_path)?;
     Ok(())
-
 }
-#[allow(dead_code)]
-// No vault.rs
 
-#[allow(dead_code)]
 pub fn secure_store(src: &str, vault: &str, password: &str) {
     let source = Path::new(src);
     let vault_path = Path::new(vault);
 
-    // 1. Validações de existência
     if !source.exists() {
         eprintln!("Erro: Arquivo de origem não existe: {}", src);
         return;
@@ -209,35 +155,25 @@ pub fn secure_store(src: &str, vault: &str, password: &str) {
         return;
     }
 
-    // 2. Definir o destino dentro do cofre
     let file_name = match source.file_name() {
         Some(name) => name,
         None => return,
     };
     let destination = vault_path.join(file_name);
 
-    // 3. Copiamos o arquivo original para o cofre com segurança
     if let Err(e) = safe_copy(source, &destination) {
         eprintln!("Erro ao copiar arquivo para o cofre: {}", e);
         return;
     }
     let destination_in_vault = destination;
 
-    // 4. Criptografamos a cópia do arquivo dentro do cofre. A função encrypt_file criará um novo arquivo .enc
-    // e manterá o original (não criptografado) no mesmo local.
     if let Err(e) = crate::crypto::encrypt_file(&destination_in_vault, password) {
         eprintln!("Erro ao criptografar arquivo no cofre: {}", e);
         return;
     }
     let _ = fs::remove_file(&destination_in_vault);
     let _ = fs::remove_file(source);
-
-
 }
-#[allow(dead_code)]
-
-// nessa função, é necessario ler e examinar a lista de arquivos
-// precisamos garantir que os arquivos estão dentro do diretorio.
 
 pub fn read_directory(directory: &str) -> Vec<String> {
     let mut files = Vec::new();
@@ -268,28 +204,22 @@ pub fn read_directory(directory: &str) -> Vec<String> {
     }
 
     files
-}  
+}
 
-#[allow(dead_code)]
-
-#[allow(dead_code)]
-pub fn delete_sandbox<P: AsRef<Path>>(directory: P) -> std::result::Result<(), std::io::Error> {
-    let info_files = directory.as_ref();
-    if info_files.exists() && (info_files).is_dir() {
-        match std::fs::remove_dir_all(info_files) {
-            Ok(_) => println!(" Sandbox deletada com sucesso: {}", info_files.display()),
-            Err(e) => eprintln!("Não foi possivel deletar diretório: {}: {}", info_files.display(), e),
-        }
-    } else {
-
-        eprintln!(
-            "Sandbox não encontrada ou não é um diretório: {}",
-            info_files.display()
-        );
-
+pub fn allow_write(path: &str) {
+    let file_exists = Path::new(path);
+    if !file_exists.exists() {
+        println!("Arquivo não encontrado: {}", path);
+        return;
     }
-
-    Ok(())
+    
+    if let Ok(metadata) = fs::metadata(file_exists) {
+        let mut permission = metadata.permissions();
+        permission.set_readonly(false);
+        if let Err(e) = fs::set_permissions(path, permission) {
+            eprintln!("Falha ao setar permissão de escrita: {}", e);
+        }
+    }
 }
 
 pub fn remove_file(vault: &str, file_name: &str) -> Result<(), Box<dyn std::error::Error>> {
@@ -324,12 +254,4 @@ pub fn get_vault_status(vault: &str) -> Result<(), Box<dyn std::error::Error>> {
     println!("Total de arquivos: {}", files.len());
     println!("Tamanho total: {:.2} KB", total_size as f64 / 1024.0);
     Ok(())
-}
-
-pub fn help() {
-    println!("Commands:");
-    println!("create-vault <path>");
-    println!("add-file <vault> <file>");
-    println!("remove-file <vault> <file>");
-    println!("status <vault>");
 }
