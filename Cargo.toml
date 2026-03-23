@@ -26,7 +26,8 @@ hmac = "0.12"
 sha2 = "0.10"
 cc = "1.1"
 chrono = "0.4"
-nix = "0.31.2"
+[dependencies]
+nix = { version = "0.31", features = ["user"] }
 [build-dependencies]
 cc = "1.1"
 
