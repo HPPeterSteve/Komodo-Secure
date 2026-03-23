@@ -7,7 +7,7 @@ O **Komodo-Secure** é uma ferramenta de segurança avançada para Linux, agora 
 O Komodo-Secure **requer privilégios de root (sudo)** para operar corretamente. Isso se deve à sua capacidade de gerenciar o isolamento de diretórios e aplicar filtros de segurança avançados (seccomp) que protegem o sistema de arquivos.
 
 ```bash
-sudo ./target/release/komodo-secure
+sudo -E ./target/release/komodo-secure
 ```
 
 ---
