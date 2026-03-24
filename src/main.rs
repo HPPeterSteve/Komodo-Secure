@@ -6,7 +6,6 @@ mod path_assistant;
 mod gui;
 
 use colored::*;
-use std::path::PathBuf;
 use nix::unistd::Uid;
 use eframe::egui;
 
