@@ -4,6 +4,7 @@ use colored::*;
 use inquire::Select;
 
 /// Calcula a distância de Levenshtein entre duas strings para fuzzy matching.
+#[allow(dead_code)]
 fn levenshtein_distance(s1: &str, s2: &str) -> usize {
     let s1_chars: Vec<char> = s1.chars().collect();
     let s2_chars: Vec<char> = s2.chars().collect();
@@ -27,6 +28,7 @@ fn levenshtein_distance(s1: &str, s2: &str) -> usize {
 }
 
 /// Tenta encontrar um caminho similar se o original não existir.
+#[allow(dead_code)]
 pub fn get_valid_path(input: &str, is_dir: bool) -> Option<PathBuf> {
     let path = PathBuf::from(input);
     
@@ -87,6 +89,7 @@ pub fn get_valid_path(input: &str, is_dir: bool) -> Option<PathBuf> {
 }
 
 /// Garante que o usuário forneça um caminho válido, seja via argumento ou interativamente.
+#[allow(dead_code)]
 pub fn ensure_path(provided: Option<&&str>, prompt: &str, is_dir: bool) -> Option<PathBuf> {
     if let Some(path_str) = provided {
         if let Some(valid) = get_valid_path(path_str, is_dir) {
