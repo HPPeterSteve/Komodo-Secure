@@ -206,6 +206,7 @@ pub fn read_directory(directory: &str) -> Vec<String> {
     files
 }
 
+#[allow(dead_code)]
 pub fn allow_write(path: &str) {
     let file_exists = Path::new(path);
     if !file_exists.exists() {
