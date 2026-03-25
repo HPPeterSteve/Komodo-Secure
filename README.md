@@ -1,196 +1,74 @@
-# 🔐 Solo-Secure v0.5.0
+# Komodo-Secure 🛡️ v0.6.0 (GUI Edition)
 
-> CLI de segurança em Rust para proteção, isolamento e gerenciamento seguro de arquivos, com foco em robustez e usabilidade.
+O **Komodo-Secure** é uma ferramenta de segurança avançada para Linux, agora com uma interface gráfica (GUI) moderna desenvolvida em Rust. Ele oferece proteção de arquivos, isolamento de diretórios (sandbox) e monitoramento de recursos do sistema em tempo real.
 
-## 🚀 Visão Geral
+## ⚠️ **Aviso Importante: Execução como Root**
 
-O **Solo-Secure** é uma ferramenta de linha de comando (CLI) focada em:
-
-* Criação e gerenciamento de cofres de arquivos
-* Criptografia segura com AES-256-GCM
-* Operações seguras de cópia e isolamento
-* Controle de permissões
-
-Projetado com foco em **segurança, simplicidade e extensibilidade**.
-
-## ⚙️ Instalação
-
-### Download do Executável (Linux x86_64)
-
-Para a instalação mais rápida, você pode baixar o binário pré-compilado:
+O Komodo-Secure **requer privilégios de root (sudo)** para operar corretamente. Isso se deve à sua capacidade de gerenciar o isolamento de diretórios e aplicar filtros de segurança avançados (seccomp) que protegem o sistema de arquivos.
 
 ```bash
-wget https://github.com/HPPeterSteve/Solo-Secure/releases/download/v0.5.0/Solo_sec_v0.5.0_linux_amd64 -O Solo_sec
-chmod +x Solo_sec
-sudo mv Solo_sec /usr/local/bin/
+sudo -E ./target/release/komodo-secure
 ```
-
-Após a instalação, o comando `Solo_sec` estará disponível globalmente no seu terminal.
-
-### Pré-requisitos (para compilação do código-fonte)
-
-*   Rust (via rustup)
-*   Linux recomendado (Ubuntu 22.04+)
-*   `libseccomp-dev` (para o sandbox em C)
-
-### Clone e build (do código-fonte)
-
-```bash
-git clone https://github.com/HPPeterSteve/Solo-Secure.git
-cd Solo-Secure
-cargo build --release
-```
-
-Binário gerado em:
-
-```bash
-target/release/Solo_sec
-```
-
-## 📦 Comandos
-
-| Comando                      | Descrição                       |
-| :--------------------------- | :------------------------------ |
-| `create-vault <path>`        | Cria um novo cofre              |
-| `add-file <vault> <file>`    | Adiciona arquivo ao cofre       |
-| `safe-copy <src> <dst>`      | Cópia segura (atomicidade)      |
-| `allow-write <file>`         | Libera escrita                  |
-| `read-directory <dir>`       | Lista arquivos                  |
-| `isolate-directory <dir>`    | Isola diretório                 |
-| `secure-copy <file> <vault>` | Criptografa e move para o cofre |
-| `encrypt <file> [senha]`     | Criptografa arquivo             |
-| `decrypt <file> [senha]`     | Descriptografa arquivo          |
-| `status <vault>`             | Exibe estatísticas do cofre     |
-| `remove-file <vault> <file>` | Remove arquivo do cofre         |
-| `help`                       | Ajuda                           |
-| `exit`                       | Sair                            |
-
-## 🔐 Criptografia
-
-* Algoritmo: **AES-256-GCM**
-* Derivação de chave: **PBKDF2 (SHA-256)**
-* Salt aleatório por operação
-* Nonce único por criptografia
-
-### 🔄 Fluxo
-
-```
-plaintext → derivação de chave → AES-256-GCM → arquivo .enc
-```
-
-## 🔑 Entrada de Senha (Modo Inteligente)
-
-O sistema utiliza fallback em três níveis:
-
-1.  **Argumento CLI**
-
-    ```bash
-    encrypt arquivo.txt senha123
-    ```
-
-2.  **stdin (automação)**
-
-    ```bash
-    echo "senha123" | Solo_sec encrypt arquivo.txt
-    ```
-
-3.  **Prompt seguro interativo**
-
-### ⚠️ Aviso de Segurança
-
-*   Senhas via argumento podem aparecer no histórico do terminal
-*   Recomendado para produção:
-
-    ```bash
-    echo "senha" | Solo_sec encrypt arquivo.txt
-    ```
-
-## 🧪 Testes
-
-### Teste de integridade
-
-```bash
-Solo_sec encrypt arquivo.txt senha
-Solo_sec decrypt arquivo.enc senha
-diff arquivo.txt arquivo.dec
-```
-
-Resultado esperado:
-
-```
-Integridade confirmada
-```
-
-## 🛡️ Segurança e Melhorias (v0.5.0)
-
-Esta versão traz um salto em **usabilidade** e **rastreabilidade**:
-
-*   **Sub-sistema de Assistência de Caminhos (Path Assistant)**: 
-    *   **Fuzzy Matching**: Se você digitar um caminho errado, o sistema sugere o arquivo mais próximo usando a distância de Levenshtein.
-    *   **Interatividade**: Prompts inteligentes que guiam o usuário caso faltem argumentos ou caminhos.
-*   **Sistema de Logs Estruturado**: Todas as operações (sucessos, avisos e erros) são registradas no arquivo `solo_secure.log` com timestamps precisos.
-*   **Filtros Seccomp no Sandbox**: Isolamento de diretórios reforçado no componente em C para bloquear chamadas de sistema críticas.
-*   **UX Refinada**: Interface CLI mais amigável com integração total da biblioteca `inquire`.
 
 ---
 
-## 🛡️ Segurança e Melhorias (v0.4.0)
+## ✨ Novidades na Versão GUI
 
-*   **Filtros Seccomp no Sandbox**: Introdução do isolamento via seccomp.
-*   **Tratamento de Erros Aprimorado**: Feedback mais claro ao usuário.
-*   **Novos Comandos**: Adição de `status` e `remove-file`.
+- **Interface Gráfica Nativa**: Substituímos a CLI por uma interface intuitiva usando `egui`, agora com **todas as funcionalidades da CLI original integradas**.
+- **Monitor de Recursos**: Uma aba dedicada para visualizar o uso de CPU e Memória RAM do seu sistema.
+- **Explorador de Arquivos**: Uma segunda aba para listar e gerenciar arquivos localmente.
+- **Segurança Reforçada**: Integração direta com o sub-sistema de isolamento e criptografia AES-256-GCM.
 
-## 🧠 Arquitetura
+## 🚀 Como Executar
 
-Separação de responsabilidades:
+### Pré-requisitos (Linux)
 
+Para compilar ou executar, você precisará das seguintes bibliotecas do sistema:
+
+```bash
+sudo apt-get update
+sudo apt-get install -y libwayland-dev libx11-dev libxkbcommon-dev libegl1-mesa-dev libgl1-mesa-dev libasound2-dev libseccomp-dev
 ```
-CLI (main)
-  ↓
-Crypto (criptografia)
-  ↓
-Vault (armazenamento)
-```
 
-### Princípios
+### Executando o Binário
 
-*   Cada módulo faz **uma única função**
-*   Criptografia desacoplada do sistema de arquivos
-*   CLI apenas orquestra operações
+O executável para Linux está disponível após a compilação em `target/release/komodo-secure`.
 
-## 🧪 Futuro / Roadmap
+## 🛠️ Funcionalidades (Todas acessíveis via GUI)
 
-*   [ ] Migração para Argon2
-*   [ ] Suporte a plugins
-*   [ ] Fuzz testing (cargo fuzz)
-*   [ ] Cobertura de testes (tarpaulin)
-*   [ ] Logs estruturados
-*   [ ] Suporte a variáveis de ambiente para senha
+### 1. Aba Principal (Segurança)
+- **Criar Cofre**: Inicializa um diretório seguro para seus arquivos (`create-vault`).
+- **Adicionar Arquivo**: Move arquivos para dentro do cofre protegido (`add-file`).
+- **Remover Arquivo**: Remove um arquivo do cofre (`remove-file`).
+- **Status do Cofre**: Exibe informações sobre o cofre (`status`).
+- **Criptografar/Descriptografar**: Proteção de arquivos com senha usando criptografia de nível militar (AES-256-GCM) (`encrypt`, `decrypt`).
+- **Secure Copy**: Copia e criptografa um arquivo para um cofre (`secure-copy`).
+- **Isolar Diretório**: Aplica restrições de sandbox e permissões somente-leitura (`isolate-directory`).
+- **Cópia Segura**: Realiza uma cópia atômica de arquivos (`safe-copy`).
+- **Listar Diretório**: Lista arquivos em um diretório (`read-directory`).
 
-## 🤝 Contribuição
+### 2. Monitor de Recursos
+- Visualização em tempo real do uso de cada núcleo da CPU.
+- Monitoramento de consumo de memória RAM.
 
-Contribuições são bem-vindas!
+### 3. Aba de Arquivos
+- Navegação e listagem de arquivos em diretórios específicos.
+- Interface simplificada para visualização de conteúdo.
 
-### Como contribuir
+## 🔐 Criptografia e Segurança
 
-1.  Fork do projeto
-2.  Crie uma branch (`feature/minha-feature`)
-3.  Commit suas mudanças
-4.  Abra um Pull Request
+*   Algoritmo: **AES-256-GCM**
+*   Derivação de chave: **PBKDF2 (SHA-256)**
+*   Isolamento: **Namespaces Linux + Seccomp Filters**
 
-## 📄 Licença
+## 📦 Compilação
 
-MIT License
+Se desejar compilar manualmente:
 
-## 💡 Filosofia
+1. Instale o Rust: `curl --proto =https --tlsv1.2 -sSf https://sh.rustup.rs | sh`
+2. Clone o repositório.
+3. Execute: `cargo build --release`
 
-> Segurança não é só criptografia.
-> É controle, previsibilidade e confiança no sistema.
-
-## 👨‍💻 Autor
-
-Desenvolvido por Peter
-
-## ⭐ Se esse projeto te ajudou
-
-Considere dar uma estrela no repositório!
+---
+*Desenvolvido com foco em privacidade e segurança máxima no Linux.*
+*Autor: Peter*

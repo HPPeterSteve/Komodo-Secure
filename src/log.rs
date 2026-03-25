@@ -2,6 +2,7 @@ use std::fs::OpenOptions;
 use std::io::Write;
 use chrono::Local;
 
+#[allow(dead_code)]
 pub enum LogLevel {
     INFO,
     WARN,
@@ -25,7 +26,7 @@ pub fn log(level: LogLevel, message: &str) {
     if let Ok(mut file) = OpenOptions::new()
         .create(true)
         .append(true)
-        .open("solo_secure.log")
+        .open("komodo_secure.log")
     {
         let _ = file.write_all(log_entry.as_bytes());
     }
@@ -35,10 +36,12 @@ pub fn info(message: &str) {
     log(LogLevel::INFO, message);
 }
 
+#[allow(dead_code)]
 pub fn warn(message: &str) {
     log(LogLevel::WARN, message);
 }
 
+#[allow(dead_code)]
 pub fn error(message: &str) {
     log(LogLevel::ERROR, message);
 }
