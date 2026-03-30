@@ -1,74 +1,54 @@
-# Komodo-Secure 🛡️ v0.6.0 (GUI Edition)
+# Komodo-Secure 🛡️ v0.6.0 (Professional Edition)
 
-O **Komodo-Secure** é uma ferramenta de segurança avançada para Linux, agora com uma interface gráfica (GUI) moderna desenvolvida em Rust. Ele oferece proteção de arquivos, isolamento de diretórios (sandbox) e monitoramento de recursos do sistema em tempo real.
+O **Komodo-Secure** é uma ferramenta de segurança de elite para Windows e Linux, projetada para fornecer isolamento rigoroso de processos e proteção avançada de arquivos com overhead mínimo.
 
-## ⚠️ **Aviso Importante: Execução como Root**
+## ✨ O que há de novo na v0.6.0
 
-O Komodo-Secure **requer privilégios de root (sudo)** para operar corretamente. Isso se deve à sua capacidade de gerenciar o isolamento de diretórios e aplicar filtros de segurança avançados (seccomp) que protegem o sistema de arquivos.
+Esta versão marca a transição para um **isolamento de nível profissional**, trazendo tecnologias usadas em navegadores modernos como Chrome e Edge para o seu terminal.
 
-```bash
-sudo -E ./target/release/komodo-secure
-```
+### 🔐 Sandbox Windows (Core/sandbox.c)
+*   **AppContainer Isolation**: Execução em um container seguro com SID próprio, bloqueando acesso a recursos do sistema por padrão.
+*   **Restricted Token**: Remoção completa de privilégios e grupos de administradores do processo sandboxed.
+*   **Untrusted Integrity Level**: O nível mais baixo de integridade possível, impedindo qualquer interação com objetos de maior privilégio.
+*   **Mitigation Policies**: Ativação de **DEP**, **ASLR forçado** e bloqueio de chamadas de sistema **Win32k** (Hardening de Kernel).
+*   **Desktop Isolado**: Lançamento em um desktop virtual separado para evitar keylogging e capturas de tela.
 
----
+### 🤖 Sub-sistema de Assistência (Path Assistant)
+*   **Fuzzy Matching**: Correção automática de erros de digitação em caminhos de arquivos usando a distância de Levenshtein.
+*   **Interface Interativa**: Sugestões inteligentes via CLI para garantir que você nunca perca o acesso aos seus cofres.
 
-## ✨ Novidades na Versão GUI
+## 🛠️ Funcionalidades Principais
 
-- **Interface Gráfica Nativa**: Substituímos a CLI por uma interface intuitiva usando `egui`, agora com **todas as funcionalidades da CLI original integradas**.
-- **Monitor de Recursos**: Uma aba dedicada para visualizar o uso de CPU e Memória RAM do seu sistema.
-- **Explorador de Arquivos**: Uma segunda aba para listar e gerenciar arquivos localmente.
-- **Segurança Reforçada**: Integração direta com o sub-sistema de isolamento e criptografia AES-256-GCM.
+| Comando | Descrição |
+| :--- | :--- |
+| `create-vault` | Inicializa um diretório seguro para proteção de dados. |
+| `add-file` | Move arquivos para dentro do cofre protegido. |
+| `isolate-directory` | Aplica o **Isolamento Profissional** ao diretório escolhido. |
+| `encrypt` / `decrypt` | Proteção AES-256-GCM com senha segura. |
+| `secure-copy` | Copia e criptografa um arquivo para um cofre em uma única operação. |
+| `status` | Relatório detalhado de ocupação e integridade do cofre. |
 
 ## 🚀 Como Executar
 
-### Pré-requisitos (Linux)
+### Pré-requisitos
+*   **Windows**: Windows 10/11 (para suporte total a AppContainer).
+*   **Linux**: Kernel moderno com suporte a Namespaces e Seccomp.
 
-Para compilar ou executar, você precisará das seguintes bibliotecas do sistema:
-
+### Compilação
 ```bash
-sudo apt-get update
-sudo apt-get install -y libwayland-dev libx11-dev libxkbcommon-dev libegl1-mesa-dev libgl1-mesa-dev libasound2-dev libseccomp-dev
+# Para Windows (Recomendado)
+cargo build --release --target x86_64-pc-windows-gnu
+
+# Para Linux
+cargo build --release
 ```
 
-### Executando o Binário
-
-O executável para Linux está disponível após a compilação em `target/release/komodo-secure`.
-
-## 🛠️ Funcionalidades (Todas acessíveis via GUI)
-
-### 1. Aba Principal (Segurança)
-- **Criar Cofre**: Inicializa um diretório seguro para seus arquivos (`create-vault`).
-- **Adicionar Arquivo**: Move arquivos para dentro do cofre protegido (`add-file`).
-- **Remover Arquivo**: Remove um arquivo do cofre (`remove-file`).
-- **Status do Cofre**: Exibe informações sobre o cofre (`status`).
-- **Criptografar/Descriptografar**: Proteção de arquivos com senha usando criptografia de nível militar (AES-256-GCM) (`encrypt`, `decrypt`).
-- **Secure Copy**: Copia e criptografa um arquivo para um cofre (`secure-copy`).
-- **Isolar Diretório**: Aplica restrições de sandbox e permissões somente-leitura (`isolate-directory`).
-- **Cópia Segura**: Realiza uma cópia atômica de arquivos (`safe-copy`).
-- **Listar Diretório**: Lista arquivos em um diretório (`read-directory`).
-
-### 2. Monitor de Recursos
-- Visualização em tempo real do uso de cada núcleo da CPU.
-- Monitoramento de consumo de memória RAM.
-
-### 3. Aba de Arquivos
-- Navegação e listagem de arquivos em diretórios específicos.
-- Interface simplificada para visualização de conteúdo.
-
-## 🔐 Criptografia e Segurança
-
-*   Algoritmo: **AES-256-GCM**
-*   Derivação de chave: **PBKDF2 (SHA-256)**
-*   Isolamento: **Namespaces Linux + Seccomp Filters**
-
-## 📦 Compilação
-
-Se desejar compilar manualmente:
-
-1. Instale o Rust: `curl --proto =https --tlsv1.2 -sSf https://sh.rustup.rs | sh`
-2. Clone o repositório.
-3. Execute: `cargo build --release`
+## 🔐 Segurança e Criptografia
+*   **Algoritmo**: AES-256-GCM (Autenticada)
+*   **Derivação**: PBKDF2 (SHA-256)
+*   **Isolamento**: AppContainer (Win) / Namespaces + Seccomp (Linux)
 
 ---
-*Desenvolvido com foco em privacidade e segurança máxima no Linux.*
-*Autor: Peter*
+*Desenvolvido com foco em privacidade absoluta e segurança máxima.*
+**Autor: Peter (HPPeterSteve)**
+**Colaboração: Manus AI**
