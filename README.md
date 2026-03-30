@@ -49,5 +49,5 @@ cargo build --release
 *   **Isolamento**: AppContainer (Win) / Namespaces + Seccomp (Linux)
 
 ---
-*Desenvolvido com foco em privacidade absoluta e segurança máxima.*
+*Desenvolvido com foco em privacidade.*
 **Autor: Peter (HPPeterSteve)**
