@@ -1,8 +1,16 @@
-#ifdef _WIN32
+#ifndef _WIN32_WINNT
+#define _WIN32_WINNT 0x0A00 // Windows 10 para AppContainer e APIs de token
+#endif
+
 #include <windows.h>
 #include <userenv.h>
 #include <sddl.h>
+#include <aclapi.h>
 #include <stdio.h>
+#include <processthreadsapi.h>
+#include <winnt.h>
+#include <string.h>
+#include <stdlib.h>
 #include <stdbool.h>
 
 #pragma comment(lib, "userenv.lib")
@@ -63,8 +71,8 @@ bool create_restricted_process(const char* app_path, PSID appContainerSid) {
     InitializeProcThreadAttributeList(si.lpAttributeList, 1, 0, &size);
 
     DWORD64 policy = PROCESS_CREATION_MITIGATION_POLICY_DEP_ENABLE |
-                     PROCESS_CREATION_MITIGATION_POLICY_ASLR_ALWAYS_ON |
-                     PROCESS_CREATION_MITIGATION_POLICY_WIN32K_SYSTEM_CALL_DISABLE |
+                     PROCESS_CREATION_MITIGATION_POLICY_BOTTOM_UP_ASLR_ALWAYS_ON |
+                     PROCESS_CREATION_MITIGATION_POLICY_WIN32K_SYSTEM_CALL_DISABLE_ALWAYS_ON |
                      PROCESS_CREATION_MITIGATION_POLICY_STRICT_HANDLE_CHECK_ENFORCE |
                      PROCESS_CREATION_MITIGATION_POLICY_IMAGE_LOAD_NO_REMOTE |
                      PROCESS_CREATION_MITIGATION_POLICY_IMAGE_LOAD_NO_LOW_LABEL;
@@ -114,8 +122,3 @@ bool try_hard_isolate(const char* app_path) {
     FreeSid(appContainerSid);
     return result;
 }
-
-#else
-#include <stdbool.h>
-bool try_hard_isolate(const char* app_path) { return false; }
-#endif
