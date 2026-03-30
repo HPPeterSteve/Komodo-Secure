@@ -1,74 +1,59 @@
-# Komodo-Secure 🛡️ v0.6.0 (GUI Edition)
+# Komodo-Secure 🛡️ v0.6.0 (Windows Edition)
 
-O **Komodo-Secure** é uma ferramenta de segurança avançada para Linux, agora com uma interface gráfica (GUI) moderna desenvolvida em Rust. Ele oferece proteção de arquivos, isolamento de diretórios (sandbox) e monitoramento de recursos do sistema em tempo real.
-
-## ⚠️ **Aviso Importante: Execução como Root**
-
-O Komodo-Secure **requer privilégios de root (sudo)** para operar corretamente. Isso se deve à sua capacidade de gerenciar o isolamento de diretórios e aplicar filtros de segurança avançados (seccomp) que protegem o sistema de arquivos.
-
-```bash
-sudo -E ./target/release/komodo-secure
-```
+O **Komodo-Secure** é uma ferramenta de segurança avançada para Windows, agora com uma interface gráfica (GUI) moderna desenvolvida em Rust. Ele oferece proteção de arquivos, isolamento de diretórios e monitoramento de recursos do sistema em tempo real.
 
 ---
 
-## ✨ Novidades na Versão GUI
+## ✨ Novidades na Versão Windows
 
-- **Interface Gráfica Nativa**: Substituímos a CLI por uma interface intuitiva usando `egui`, agora com **todas as funcionalidades da CLI original integradas**.
-- **Monitor de Recursos**: Uma aba dedicada para visualizar o uso de CPU e Memória RAM do seu sistema.
-- **Explorador de Arquivos**: Uma segunda aba para listar e gerenciar arquivos localmente.
-- **Segurança Reforçada**: Integração direta com o sub-sistema de isolamento e criptografia AES-256-GCM.
+- **Interface Gráfica Nativa**: Interface intuitiva usando `egui`, otimizada para Windows.
+- **Isolamento de Diretórios**: Implementação de segurança baseada em permissões do sistema de arquivos do Windows.
+- **Monitor de Recursos**: Aba dedicada para visualizar o uso de CPU e Memória RAM do seu sistema Windows.
+- **Explorador de Arquivos**: Aba para listar e gerenciar arquivos localmente.
+- **Segurança Reforçada**: Criptografia AES-256-GCM com derivação de chave PBKDF2.
 
-## 🚀 Como Executar
+## 🚀 Como Executar no Windows
 
-### Pré-requisitos (Linux)
+### Pré-requisitos
 
-Para compilar ou executar, você precisará das seguintes bibliotecas do sistema:
+Para compilar no Windows, você precisará do Rust instalado com o toolchain MSVC:
 
-```bash
-sudo apt-get update
-sudo apt-get install -y libwayland-dev libx11-dev libxkbcommon-dev libegl1-mesa-dev libgl1-mesa-dev libasound2-dev libseccomp-dev
+1. Instale o Rust via [rustup.rs](https://rustup.rs/).
+2. Certifique-se de ter as "Ferramentas de Compilação do C++" instaladas (via Visual Studio Installer).
+
+### Compilação
+
+```powershell
+# Clone o repositório
+git clone https://github.com/HPPeterSteve/Komodo-Secure.git
+cd Komodo-Secure
+
+# Compile a versão release
+cargo build --release
 ```
 
-### Executando o Binário
+O executável será gerado em `target\release\komodo-secure.exe`.
 
-O executável para Linux está disponível após a compilação em `target/release/komodo-secure`.
-
-## 🛠️ Funcionalidades (Todas acessíveis via GUI)
+## 🛠️ Funcionalidades
 
 ### 1. Aba Principal (Segurança)
-- **Criar Cofre**: Inicializa um diretório seguro para seus arquivos (`create-vault`).
-- **Adicionar Arquivo**: Move arquivos para dentro do cofre protegido (`add-file`).
-- **Remover Arquivo**: Remove um arquivo do cofre (`remove-file`).
-- **Status do Cofre**: Exibe informações sobre o cofre (`status`).
-- **Criptografar/Descriptografar**: Proteção de arquivos com senha usando criptografia de nível militar (AES-256-GCM) (`encrypt`, `decrypt`).
-- **Secure Copy**: Copia e criptografa um arquivo para um cofre (`secure-copy`).
-- **Isolar Diretório**: Aplica restrições de sandbox e permissões somente-leitura (`isolate-directory`).
-- **Cópia Segura**: Realiza uma cópia atômica de arquivos (`safe-copy`).
-- **Listar Diretório**: Lista arquivos em um diretório (`read-directory`).
+- **Criar Cofre**: Inicializa um diretório seguro para seus arquivos.
+- **Adicionar Arquivo**: Move arquivos para dentro do cofre protegido.
+- **Criptografar/Descriptografar**: Proteção de arquivos com senha usando AES-256-GCM.
+- **Isolar Diretório**: Aplica restrições de segurança no diretório selecionado.
 
 ### 2. Monitor de Recursos
-- Visualização em tempo real do uso de cada núcleo da CPU.
-- Monitoramento de consumo de memória RAM.
+- Visualização em tempo real do uso de CPU e Memória RAM.
 
 ### 3. Aba de Arquivos
-- Navegação e listagem de arquivos em diretórios específicos.
-- Interface simplificada para visualização de conteúdo.
+- Navegação e listagem de arquivos locais.
 
 ## 🔐 Criptografia e Segurança
 
 *   Algoritmo: **AES-256-GCM**
 *   Derivação de chave: **PBKDF2 (SHA-256)**
-*   Isolamento: **Namespaces Linux + Seccomp Filters**
-
-## 📦 Compilação
-
-Se desejar compilar manualmente:
-
-1. Instale o Rust: `curl --proto =https --tlsv1.2 -sSf https://sh.rustup.rs | sh`
-2. Clone o repositório.
-3. Execute: `cargo build --release`
+*   Isolamento: **Windows File System Permissions**
 
 ---
-*Desenvolvido com foco em privacidade e segurança máxima no Linux.*
+*Desenvolvido com foco em privacidade e segurança máxima no Windows.*
 *Autor: Peter*
