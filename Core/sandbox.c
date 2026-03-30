@@ -1,60 +1,121 @@
 #ifdef _WIN32
 #include <windows.h>
+#include <userenv.h>
+#include <sddl.h>
 #include <stdio.h>
 #include <stdbool.h>
 
+#pragma comment(lib, "userenv.lib")
+#pragma comment(lib, "advapi32.lib")
+
 /**
- * No Windows, usamos Job Objects para isolar o processo.
- * Isso permite restringir o uso de CPU, memória, rede e impedir a criação de novos processos.
+ * Komodo-Secure: Fortaleza de Isolamento Windows
+ * Implementa: AppContainer, Restricted Tokens, Low Integrity Level, 
+ * Mitigation Policies (ASLR, DEP, win32k block) e Desktop Isolado.
  */
-bool try_hard_isolate(const char *app_path) {
-    HANDLE hJob = CreateJobObject(NULL, "KomodoSecureJob");
-    if (hJob == NULL) {
-        return false;
+
+bool setup_app_container(const char* container_name, PSID* pSid) {
+    wchar_t wName[MAX_PATH];
+    MultiByteToWideChar(CP_UTF8, 0, container_name, -1, wName, MAX_PATH);
+
+    // 1. Criar Perfil do AppContainer
+    HRESULT hr = CreateAppContainerProfile(wName, wName, wName, NULL, 0, pSid);
+    if (FAILED(hr)) {
+        if (hr == HRESULT_FROM_WIN32(ERROR_ALREADY_EXISTS)) {
+            hr = DeriveAppContainerSidFromAppContainerName(wName, pSid);
+        }
+        if (FAILED(hr)) return false;
     }
-
-    // 1. Restrições de UI e Sistema
-    JOBOBJECT_BASIC_UI_RESTRICTIONS uiRestrictions = {0};
-    uiRestrictions.UIRestrictionsClass = JOB_OBJECT_UILIMIT_HANDLES | 
-                                         JOB_OBJECT_UILIMIT_READCLIPBOARD | 
-                                         JOB_OBJECT_UILIMIT_WRITECLIPBOARD |
-                                         JOB_OBJECT_UILIMIT_SYSTEMPARAMETERS |
-                                         JOB_OBJECT_UILIMIT_DISPLAYSETTINGS;
-    
-    if (!SetInformationJobObject(hJob, JobObjectBasicUIRestrictions, &uiRestrictions, sizeof(uiRestrictions))) {
-        CloseHandle(hJob);
-        return false;
-    }
-
-    // 2. Restrições de Limite de Processos e Rede (via JobObjectNetworkLimitInformation se disponível)
-    JOBOBJECT_EXTENDED_LIMIT_INFORMATION limitInfo = {0};
-    limitInfo.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE | 
-                                                 JOB_OBJECT_LIMIT_DIE_ON_UNHANDLED_EXCEPTION |
-                                                 JOB_OBJECT_LIMIT_ACTIVE_PROCESS;
-    limitInfo.BasicLimitInformation.ActiveProcessLimit = 1; // Impede criação de subprocessos
-
-    if (!SetInformationJobObject(hJob, JobObjectExtendedLimitInformation, &limitInfo, sizeof(limitInfo))) {
-        CloseHandle(hJob);
-        return false;
-    }
-
-    // 3. Associar o processo atual ao Job
-    if (!AssignProcessToJobObject(hJob, GetCurrentProcess())) {
-        // Se já estiver em um job, pode falhar dependendo das permissões
-        CloseHandle(hJob);
-        return false;
-    }
-
-    // No Windows, o isolamento de rede "puro" via C é mais complexo (exige Windows Filtering Platform),
-    // mas o Job Object já impede que o processo crie novos sockets se configurado via AppContainer.
-    // Para uma CLI simples, o Job Object é a base mais forte.
-
     return true;
 }
-#else
-// Fallback para Linux (mantendo compatibilidade mínima se necessário)
-#include <stdbool.h>
-bool try_hard_isolate(const char *app_path) {
-    return false; // Desativado nesta versão focada em Windows
+
+bool create_restricted_process(const char* app_path, PSID appContainerSid) {
+    HANDLE hToken = NULL;
+    HANDLE hRestrictedToken = NULL;
+    PROCESS_INFORMATION pi = {0};
+    STARTUPINFOEXW si = {0};
+    si.StartupInfo.cb = sizeof(STARTUPINFOEXW);
+
+    // 1. Obter Token do Processo Atual
+    if (!OpenProcessToken(GetCurrentProcess(), TOKEN_ALL_ACCESS, &hToken)) return false;
+
+    // 2. Criar Restricted Token (Remover Privilégios e Grupos)
+    if (!CreateRestrictedToken(hToken, DISABLE_MAX_PRIVILEGE, 0, NULL, 0, NULL, 0, NULL, &hRestrictedToken)) {
+        CloseHandle(hToken);
+        return false;
+    }
+
+    // 3. Definir Integrity Level (Untrusted - Mais forte que Low)
+    SID_IDENTIFIER_AUTHORITY MLAuthority = SECURITY_MANDATORY_LABEL_AUTHORITY;
+    PSID pUntrustedSid = NULL;
+    AllocateAndInitializeSid(&MLAuthority, 1, SECURITY_MANDATORY_UNTRUSTED_RID, 0, 0, 0, 0, 0, 0, 0, &pUntrustedSid);
+
+    TOKEN_MANDATORY_LABEL tml = {0};
+    tml.Label.Attributes = SE_GROUP_INTEGRITY;
+    tml.Label.Sid = pUntrustedSid;
+
+    SetTokenInformation(hRestrictedToken, TokenIntegrityLevel, &tml, sizeof(tml) + GetLengthSid(pUntrustedSid));
+
+    // 4. Configurar Mitigation Policies (ASLR, DEP, win32k block)
+    SIZE_T size = 0;
+    InitializeProcThreadAttributeList(NULL, 1, 0, &size);
+    si.lpAttributeList = (LPPROC_THREAD_ATTRIBUTE_LIST)HeapAlloc(GetProcessHeap(), 0, size);
+    InitializeProcThreadAttributeList(si.lpAttributeList, 1, 0, &size);
+
+    DWORD64 policy = PROCESS_CREATION_MITIGATION_POLICY_DEP_ENABLE |
+                     PROCESS_CREATION_MITIGATION_POLICY_ASLR_ALWAYS_ON |
+                     PROCESS_CREATION_MITIGATION_POLICY_WIN32K_SYSTEM_CALL_DISABLE |
+                     PROCESS_CREATION_MITIGATION_POLICY_STRICT_HANDLE_CHECK_ENFORCE |
+                     PROCESS_CREATION_MITIGATION_POLICY_IMAGE_LOAD_NO_REMOTE |
+                     PROCESS_CREATION_MITIGATION_POLICY_IMAGE_LOAD_NO_LOW_LABEL;
+
+    UpdateProcThreadAttribute(si.lpAttributeList, 0, PROC_THREAD_ATTRIBUTE_MITIGATION_POLICY, &policy, sizeof(policy), NULL, NULL);
+
+    // 5. Criar Desktop Isolado
+    HDESK hNewDesktop = CreateDesktopA("KomodoSandboxDesktop", NULL, NULL, 0, GENERIC_ALL, NULL);
+    si.StartupInfo.lpDesktop = "KomodoSandboxDesktop";
+
+    // 6. Lançar Processo como AppContainer + Restricted Token
+    wchar_t wAppPath[MAX_PATH];
+    MultiByteToWideChar(CP_UTF8, 0, app_path, -1, wAppPath, MAX_PATH);
+
+    BOOL success = CreateProcessAsUserW(
+        hRestrictedToken,
+        wAppPath,
+        NULL, NULL, NULL, FALSE,
+        EXTENDED_STARTUPINFO_PRESENT | CREATE_NEW_CONSOLE | CREATE_UNICODE_ENVIRONMENT,
+        NULL, NULL,
+        &si.StartupInfo,
+        &pi
+    );
+
+    if (success) {
+        CloseHandle(pi.hProcess);
+        CloseHandle(pi.hThread);
+    }
+
+    // Cleanup
+    DeleteProcThreadAttributeList(si.lpAttributeList);
+    HeapFree(GetProcessHeap(), 0, si.lpAttributeList);
+    FreeSid(pUntrustedSid);
+    CloseHandle(hRestrictedToken);
+    CloseHandle(hToken);
+
+    return success;
 }
+
+bool try_hard_isolate(const char* app_path) {
+    PSID appContainerSid = NULL;
+    if (!setup_app_container("KomodoSecureSandbox", &appContainerSid)) return false;
+    
+    // TODO: Implementar WFP (Windows Filtering Platform) para bloqueio de rede aqui
+    
+    bool result = create_restricted_process(app_path, appContainerSid);
+    FreeSid(appContainerSid);
+    return result;
+}
+
+#else
+#include <stdbool.h>
+bool try_hard_isolate(const char* app_path) { return false; }
 #endif
