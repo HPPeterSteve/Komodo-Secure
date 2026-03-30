@@ -1,6 +1,6 @@
 # Komodo-Secure 🛡️ v0.6.0 (Professional Edition)
 
-O **Komodo-Secure** é uma ferramenta de segurança de elite para Windows e Linux, projetada para fornecer isolamento rigoroso de processos e proteção avançada de arquivos com overhead mínimo.
+O **Komodo-Secure** é uma ferramenta de segurança de elite para Windows, projetada para fornecer isolamento rigoroso de processos e proteção avançada de arquivos com overhead mínimo.
 
 ## ✨ O que há de novo na v0.6.0
 
@@ -51,4 +51,3 @@ cargo build --release
 ---
 *Desenvolvido com foco em privacidade absoluta e segurança máxima.*
 **Autor: Peter (HPPeterSteve)**
-**Colaboração: Manus AI**
