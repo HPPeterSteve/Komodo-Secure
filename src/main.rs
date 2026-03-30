@@ -256,7 +256,7 @@ fn main() {
 
     println!(
         "{}",
-        "Solo-Secure v0.5.0 iniciado! 🛡️ Sub-sistema de Assistência de Caminhos ATIVO. Digite 'help'".bright_green()
+        "Solo-Secure v0.6.0 iniciado! 🛡️ Sub-sistema de Assistência de Caminhos ATIVO. Digite 'help'".bright_green()
     );
 
     loop {

@@ -2,7 +2,6 @@
 name = "komodo-secure"
 version = "0.6.0"
 edition = "2024"
-
 build = "build.rs"
 
 [dependencies]
@@ -30,7 +29,15 @@ chrono = "0.4"
 nix = { version = "0.31", features = ["user"] }
 
 [target.'cfg(windows)'.dependencies]
-windows-sys = { version = "0.52", features = ["Win32_System_JobObjects", "Win32_Foundation", "Win32_System_Threading"] }
+
+windows-sys = { version = "0.61.2", features = ["Win32_System_JobObjects", "Win32_Foundation", "Win32_System_Threading"] }
+
+windows = { version = "0.62.2", features = [
+    "Win32_Foundation",
+    "Win32_Security", # O PSID mora aqui!
+    "Win32_System_Threading",
+    "Win32_System_JobObjects"
+] }
 
 [build-dependencies]
 cc = "1.1"

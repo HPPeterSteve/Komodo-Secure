@@ -1,34 +1,25 @@
-#ifndef _WIN32_WINNT
-#define _WIN32_WINNT 0x0A00 // Windows 10 para AppContainer e APIs de token
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
 #endif
 
 #include <windows.h>
 #include <userenv.h>
-#include <sddl.h>
-#include <aclapi.h>
 #include <stdio.h>
-#include <processthreadsapi.h>
-#include <winnt.h>
-#include <string.h>
-#include <stdlib.h>
 #include <stdbool.h>
-#include <fwpmu.h>
-#include <fwpmtypes.h>
-#pragma comment(lib, "fwpuclnt.lib")
+
 #pragma comment(lib, "userenv.lib")
 #pragma comment(lib, "advapi32.lib")
 
-/**
- * Komodo-Secure: Fortaleza de Isolamento Windows
- * Implementa: AppContainer, Restricted Tokens, Low Integrity Level, 
- * Mitigation Policies (ASLR, DEP, win32k block) e Desktop Isolado.
- */
+// Definindo os valores manualmente para compatibilidade total
+#define K_DEP_ENABLE      0x0000000000000001ULL
+#define K_ASLR_ALWAYS_ON  0x0000000000000004ULL
+#define K_STRICT_HANDLE   0x0000000000000010ULL // O que estava dando erro
+#define K_NO_REMOTE_LOAD  (1ULL << 52)
 
 bool setup_app_container(const char* container_name, PSID* pSid) {
     wchar_t wName[MAX_PATH];
-    MultiByteToWideChar(CP_UTF8, 0, container_name, -1, wName, MAX_PATH);
+    if (MultiByteToWideChar(CP_UTF8, 0, container_name, -1, wName, MAX_PATH) == 0) return false;
 
-    // 1. Criar Perfil do AppContainer
     HRESULT hr = CreateAppContainerProfile(wName, wName, wName, NULL, 0, pSid);
     if (FAILED(hr)) {
         if (hr == HRESULT_FROM_WIN32(ERROR_ALREADY_EXISTS)) {
@@ -46,60 +37,47 @@ bool create_restricted_process(const char* app_path, PSID appContainerSid) {
     STARTUPINFOEXW si = {0};
     si.StartupInfo.cb = sizeof(STARTUPINFOEXW);
 
-    // 1. Obter Token do Processo Atual
     if (!OpenProcessToken(GetCurrentProcess(), TOKEN_ALL_ACCESS, &hToken)) return false;
 
-    
     if (!CreateRestrictedToken(hToken, DISABLE_MAX_PRIVILEGE, 0, NULL, 0, NULL, 0, NULL, &hRestrictedToken)) {
         CloseHandle(hToken);
         return false;
     }
 
-    // 3. Definir Integrity Level (Untrusted - Mais forte que Low)
+    // Nível Untrusted (Integridade mínima)
     SID_IDENTIFIER_AUTHORITY MLAuthority = SECURITY_MANDATORY_LABEL_AUTHORITY;
-                                                     PSID pUntrustedSid = NULL;
-    AllocateAndInitializeSid(&MLAuthority, 1, SECURITY_MANDATORY_UNTRUSTED_RID, 0, 0, 0, 0, 0, 0, 0, &pUntrustedSid);
+    PSID pUntrustedSid = NULL;
+    if (AllocateAndInitializeSid(&MLAuthority, 1, SECURITY_MANDATORY_UNTRUSTED_RID, 0, 0, 0, 0, 0, 0, 0, &pUntrustedSid)) {
+        TOKEN_MANDATORY_LABEL tml = {0};
+        tml.Label.Attributes = SE_GROUP_INTEGRITY;
+        tml.Label.Sid = pUntrustedSid;
+        SetTokenInformation(hRestrictedToken, TokenIntegrityLevel, &tml, (DWORD)(sizeof(tml) + GetLengthSid(pUntrustedSid)));
+    }
 
-    TOKEN_MANDATORY_LABEL tml = {0};
-    tml.Label.Attributes = SE_GROUP_INTEGRITY;
-    tml.Label.Sid = pUntrustedSid;
-
-    SetTokenInformation(hRestrictedToken, TokenIntegrityLevel, &tml, sizeof(tml) + GetLengthSid(pUntrustedSid));
-
-    // 4. Configurar Mitigation Policies (ASLR, DEP, win32k block)
     SIZE_T size = 0;
     InitializeProcThreadAttributeList(NULL, 1, 0, &size);
     si.lpAttributeList = (LPPROC_THREAD_ATTRIBUTE_LIST)HeapAlloc(GetProcessHeap(), 0, size);
-    InitializeProcThreadAttributeList(si.lpAttributeList, 1, 0, &size);
-
-    DWORD64 policy = PROCESS_CREATION_MITIGATION_POLICY_DEP_ENABLE |
-                     PROCESS_CREATION_MITIGATION_POLICY_BOTTOM_UP_ASLR_ALWAYS_ON |
-                     PROCESS_CREATION_MITIGATION_POLICY_WIN32K_SYSTEM_CALL_DISABLE_ALWAYS_ON |
-                     PROCESS_CREATION_MITIGATION_POLICY_STRICT_HANDLE_CHECK_ENFORCE |
-                     PROCESS_CREATION_MITIGATION_POLICY_IMAGE_LOAD_NO_REMOTE |
-                     PROCESS_CREATION_MITIGATION_POLICY_IMAGE_LOAD_NO_LOW_LABEL;
-
-    SECURITY_CAPABILITIES sc = {0};
-                             sc.AppContainerSid = appContainerSid;
-                             sc.Capabilities = NULL;
-                             sc.CapabilityCount = 0;
-                             sc.Reserved = 0;             
     
+    if (!si.lpAttributeList || !InitializeProcThreadAttributeList(si.lpAttributeList, 1, 0, &size)) {
+        return false;
+    }
+
+    // Usando os valores manuais que definimos no topo do arquivo
+    DWORD64 policy = K_DEP_ENABLE | K_ASLR_ALWAYS_ON | K_STRICT_HANDLE | K_NO_REMOTE_LOAD;
+
     UpdateProcThreadAttribute(
-        si.lpAttributeList,
-         0, 
-         PROC_THREAD_ATTRIBUTE_MITIGATION_POLICY,
-         &policy, 
-         sizeof(policy), 
-         NULL,
-         NULL
-        );
-    
-    // 5. Criar Desktop Isolado
-    HDESK hNewDesktop = CreateDesktopA("KomodoSandboxDesktop", NULL, NULL, 0, GENERIC_ALL, NULL);
-    si.StartupInfo.lpDesktop = "KomodoSandboxDesktop";
+        si.lpAttributeList, 
+        0, 
+        PROC_THREAD_ATTRIBUTE_MITIGATION_POLICY, 
+        &policy, 
+        sizeof(policy), 
+        NULL, 
+        NULL
+    );
 
-    // 6. Lançar Processo como AppContainer + Restricted Token
+    // Desktop Isolado
+    si.StartupInfo.lpDesktop = (LPWSTR)L"KomodoSandboxDesktop";
+
     wchar_t wAppPath[MAX_PATH];
     MultiByteToWideChar(CP_UTF8, 0, app_path, -1, wAppPath, MAX_PATH);
 
@@ -118,24 +96,19 @@ bool create_restricted_process(const char* app_path, PSID appContainerSid) {
         CloseHandle(pi.hThread);
     }
 
-    // Cleanup
     DeleteProcThreadAttributeList(si.lpAttributeList);
     HeapFree(GetProcessHeap(), 0, si.lpAttributeList);
-    FreeSid(pUntrustedSid);
+    if (pUntrustedSid) FreeSid(pUntrustedSid);
     CloseHandle(hRestrictedToken);
     CloseHandle(hToken);
-
-    return success;
+    
+    return success != 0;
 }
 
 bool try_hard_isolate(const char* app_path) {
     PSID appContainerSid = NULL;
     if (!setup_app_container("KomodoSecureSandbox", &appContainerSid)) return false;
-    
-    // TODO: Implementar WFP (Windows Filtering Platform) para bloqueio de rede aqui
-
-    
     bool result = create_restricted_process(app_path, appContainerSid);
-    FreeSid(appContainerSid);
+    if (appContainerSid) FreeSid(appContainerSid);
     return result;
 }

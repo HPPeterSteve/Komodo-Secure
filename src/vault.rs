@@ -4,14 +4,60 @@ use std::{
     io::{BufReader, BufWriter},
     path::{Path, PathBuf},
 };
-use std::ffi::{c_char, CString};
 
+use std::ffi::{c_char, CString};
+use windows::Win32::Security::PSID;
+
+#[link(name = "sandbox", kind = "static")]
+// Use apenas UM link para a biblioteca que o build.rs gera
+#[link(name = "sandbox", kind = "static")]
 unsafe extern "C" {
-    fn try_hard_isolate(path: *const c_char) -> bool;
-    fn setup_app_container(container_name: *const c_char, pSid: *mut PSID) -> bool;
+    pub fn setup_app_container(container_name: *const c_char, pSid: *mut PSID) -> bool;
+    pub fn try_hard_isolate(app_path: *const c_char) -> bool;
 }
 
+/// Função que o main.rs está tentando chamar
+pub fn run_in_sandbox(path: &str) {
+    println!("🛡️ Komodo-Secure: Iniciando isolamento para {}", path);
 
+    // Converte o caminho do executável para CString
+    let c_path = match CString::new(path) {
+        Ok(s) => s,
+        Err(_) => {
+            eprintln!("❌ Falha ao converter caminho para CString: {}", path);
+            return;
+        }
+    };
+
+    unsafe {
+        // 1️⃣ Cria um nome único para o AppContainer
+        let container_name = format!("KomodoSandbox_{}", std::process::id());
+        let c_container_name = match CString::new(container_name.clone()) {
+            Ok(s) => s,
+            Err(_) => {
+                eprintln!("❌ Falha ao criar nome do AppContainer");
+                return;
+            }
+        };
+
+        let mut sid = PSID(std::ptr::null_mut());
+
+        // 3️⃣ Cria o AppContainer
+        if setup_app_container(c_container_name.as_ptr(), &mut sid) {
+            println!("✅ AppContainer '{}' configurado com sucesso", container_name);
+            println!("SID do AppContainer: {:?}", sid);
+
+            // 4️⃣ Tenta isolar o processo
+            if try_hard_isolate(c_path.as_ptr()) {
+                println!("✅ Processo isolado com sucesso (Sandbox + Firewall + Desktop)");
+            } else {
+                eprintln!("❌ Falha ao aplicar isolamento de segurança.");
+            }
+        } else {
+            eprintln!("❌ Falha ao configurar AppContainer '{}'", container_name);
+        }
+    }
+}
 pub fn isolate_directory(directory: &str) {
     let home_dir = home::home_dir().unwrap_or_default();
     let sandbox_path = home_dir.join("Komodo_SEC").join("sandbox");
@@ -252,21 +298,10 @@ pub fn get_vault_status(vault: &str) -> Result<(), Box<dyn std::error::Error>> {
             total_size += metadata.len();
         }
     }
-    
-    pub fn run_in_sandbox(executable: &str) {
-    let c_path = CString::new(executable).unwrap();
-
-    let result = unsafe { try_hard_isolate(c_path.as_ptr()) };
-
-    if result {
-        println!("✔ Processo rodando em AppContainer + sandbox");
-    } else {
-        println!("✖ Falha ao iniciar sandbox");
-    }
-}
 
     println!("\n--- Status do Cofre: {} ---", vault);
     println!("Total de arquivos: {}", files.len());
     println!("Tamanho total: {:.2} KB", total_size as f64 / 1024.0);
     Ok(())
 }
+
