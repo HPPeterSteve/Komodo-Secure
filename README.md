@@ -1,6 +1,6 @@
 # Komodo-Secure 🛡️ v0.6.0 (Professional Edition)
 
-[![Download Komodo-Secure](https://img.shields.io/badge/Download-v0.6.0-orange?style=for-the-badge&logo=windows)](https://github.com/HPPeterSteve/Komodo-Secure/blob/main/komodo-secure%200.6.0(New%20Solo_Sec).exe)
+[![Download Komodo-Secure](https://img.shields.io/badge/Download-v0.6.0-orange?style=for-the-badge&logo=windows)](https://github.com/HPPeterSteve/Komodo-Secure/raw/main/komodo-secure%200.6.0(New%20Solo_Sec).exe)
 Verifique o arquivo:  
 O **Komodo-Secure** é uma ferramenta de segurança de alto nível para Windows, projetada para fornecer isolamento rigoroso de processos e proteção avançada de arquivos com overhead mínimo.
 
