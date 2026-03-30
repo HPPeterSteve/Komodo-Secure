@@ -77,6 +77,21 @@ pub fn create(dir: &str) {
         return;
     } else {
         println!("Cofre criado com sucesso em {}", dir);
+        
+        // Aplicar isolamento profissional ao diretório recém-criado
+        let c_path = match CString::new(dir) {
+            Ok(p) => p,
+            Err(_) => return,
+        };
+        
+        println!("Aplicando isolamento profissional (AppContainer/Restricted Token)...");
+        unsafe {
+            if try_hard_isolate(c_path.as_ptr()) {
+                println!("✔ Isolamento profissional aplicado com sucesso.");
+            } else {
+                println!("⚠ Falha ao aplicar isolamento profissional (verifique privilégios).");
+            }
+        }
     }
 }
 
