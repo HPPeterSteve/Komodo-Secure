@@ -12,7 +12,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdbool.h>
-
+#include <fwpmu.h>
+#include <fwpmtypes.h>
+#pragma comment(lib, "fwpuclnt.lib")
 #pragma comment(lib, "userenv.lib")
 #pragma comment(lib, "advapi32.lib")
 
@@ -47,7 +49,7 @@ bool create_restricted_process(const char* app_path, PSID appContainerSid) {
     // 1. Obter Token do Processo Atual
     if (!OpenProcessToken(GetCurrentProcess(), TOKEN_ALL_ACCESS, &hToken)) return false;
 
-    // 2. Criar Restricted Token (Remover Privilégios e Grupos)
+    
     if (!CreateRestrictedToken(hToken, DISABLE_MAX_PRIVILEGE, 0, NULL, 0, NULL, 0, NULL, &hRestrictedToken)) {
         CloseHandle(hToken);
         return false;
@@ -55,7 +57,7 @@ bool create_restricted_process(const char* app_path, PSID appContainerSid) {
 
     // 3. Definir Integrity Level (Untrusted - Mais forte que Low)
     SID_IDENTIFIER_AUTHORITY MLAuthority = SECURITY_MANDATORY_LABEL_AUTHORITY;
-    PSID pUntrustedSid = NULL;
+                                                     PSID pUntrustedSid = NULL;
     AllocateAndInitializeSid(&MLAuthority, 1, SECURITY_MANDATORY_UNTRUSTED_RID, 0, 0, 0, 0, 0, 0, 0, &pUntrustedSid);
 
     TOKEN_MANDATORY_LABEL tml = {0};
@@ -77,8 +79,22 @@ bool create_restricted_process(const char* app_path, PSID appContainerSid) {
                      PROCESS_CREATION_MITIGATION_POLICY_IMAGE_LOAD_NO_REMOTE |
                      PROCESS_CREATION_MITIGATION_POLICY_IMAGE_LOAD_NO_LOW_LABEL;
 
-    UpdateProcThreadAttribute(si.lpAttributeList, 0, PROC_THREAD_ATTRIBUTE_MITIGATION_POLICY, &policy, sizeof(policy), NULL, NULL);
-
+    SECURITY_CAPABILITIES sc = {0};
+                             sc.AppContainerSid = appContainerSid;
+                             sc.Capabilities = NULL;
+                             sc.CapabilityCount = 0;
+                             sc.Reserved = 0;             
+    
+    UpdateProcThreadAttribute(
+        si.lpAttributeList,
+         0, 
+         PROC_THREAD_ATTRIBUTE_MITIGATION_POLICY,
+         &policy, 
+         sizeof(policy), 
+         NULL,
+         NULL
+        );
+    
     // 5. Criar Desktop Isolado
     HDESK hNewDesktop = CreateDesktopA("KomodoSandboxDesktop", NULL, NULL, 0, GENERIC_ALL, NULL);
     si.StartupInfo.lpDesktop = "KomodoSandboxDesktop";
@@ -117,6 +133,7 @@ bool try_hard_isolate(const char* app_path) {
     if (!setup_app_container("KomodoSecureSandbox", &appContainerSid)) return false;
     
     // TODO: Implementar WFP (Windows Filtering Platform) para bloqueio de rede aqui
+
     
     bool result = create_restricted_process(app_path, appContainerSid);
     FreeSid(appContainerSid);

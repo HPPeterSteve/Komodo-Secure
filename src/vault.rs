@@ -8,7 +8,9 @@ use std::ffi::{c_char, CString};
 
 unsafe extern "C" {
     fn try_hard_isolate(path: *const c_char) -> bool;
+    fn setup_app_container(container_name: *const c_char, pSid: *mut PSID) -> bool;
 }
+
 
 pub fn isolate_directory(directory: &str) {
     let home_dir = home::home_dir().unwrap_or_default();
@@ -250,6 +252,18 @@ pub fn get_vault_status(vault: &str) -> Result<(), Box<dyn std::error::Error>> {
             total_size += metadata.len();
         }
     }
+    
+    pub fn run_in_sandbox(executable: &str) {
+    let c_path = CString::new(executable).unwrap();
+
+    let result = unsafe { try_hard_isolate(c_path.as_ptr()) };
+
+    if result {
+        println!("✔ Processo rodando em AppContainer + sandbox");
+    } else {
+        println!("✖ Falha ao iniciar sandbox");
+    }
+}
 
     println!("\n--- Status do Cofre: {} ---", vault);
     println!("Total de arquivos: {}", files.len());

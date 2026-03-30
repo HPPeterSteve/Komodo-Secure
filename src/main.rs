@@ -217,6 +217,13 @@ fn handle_command(parts: Vec<&str>) {
                 }
             }
         }
+        "run_in_sandbox" => {
+            if let Some(dir) = path_assistant::ensure_path(parts.get(1), "Diretório para rodar em sandbox:", true) {
+                log::info(&format!("Rodando diretório em sandbox: {:?}", dir));
+                vault::run_in_sandbox(dir.to_str().unwrap());
+            }
+        }
+        
 
         "help" => {
             show_help();
