@@ -28,6 +28,7 @@ fn levenshtein_distance(s1: &str, s2: &str) -> usize {
 }
 
 /// Tenta encontrar um caminho similar se o original não existir.
+/// Agora com tratamento de erros mais robusto e mensagens informativas.
 #[allow(dead_code)]
 pub fn get_valid_path(input: &str, is_dir: bool) -> Option<PathBuf> {
     let path = PathBuf::from(input);
@@ -39,32 +40,50 @@ pub fn get_valid_path(input: &str, is_dir: bool) -> Option<PathBuf> {
     println!("{}", format!("⚠ O caminho '{}' não foi encontrado.", input).yellow());
 
     // Buscar sugestões no diretório pai ou atual
-    let parent = path.parent().filter(|p| !p.as_os_str().is_empty()).unwrap_or(Path::new("."));
+    let parent = path.parent()
+        .filter(|p| !p.as_os_str().is_empty())
+        .unwrap_or(Path::new("."));
+
+    // Tratamento de erro explícito ao ler diretório
+    let entries = match fs::read_dir(parent) {
+        Ok(e) => e,
+        Err(e) => {
+            eprintln!("{}", format!("✖ Erro ao acessar diretório pai '{}': {}", parent.display(), e).red());
+            return None;
+        }
+    };
+
     let mut suggestions = Vec::new();
+    let target_name = match path.file_name().and_then(|n| n.to_str()) {
+        Some(name) => name,
+        None => {
+            eprintln!("{}", "✖ Não foi possível extrair o nome do arquivo/diretório do caminho fornecido.".red());
+            return None;
+        }
+    };
 
-    if let Ok(entries) = fs::read_dir(parent) {
-        let target_name = path.file_name()?.to_str()?;
+    for entry in entries.flatten() {
+        let entry_path = entry.path();
         
-        for entry in entries.flatten() {
-            let entry_path = entry.path();
-            if is_dir && !entry_path.is_dir() { continue; }
-            if !is_dir && !entry_path.is_file() { continue; }
+        // Filtro robusto por tipo (diretório ou arquivo)
+        if is_dir && !entry_path.is_dir() { continue; }
+        if !is_dir && !entry_path.is_file() { continue; }
 
-            if let Some(name) = entry_path.file_name().and_then(|n| n.to_str()) {
-                let dist = levenshtein_distance(target_name, name);
-                if dist <= 3 || name.contains(target_name) || target_name.contains(name) {
-                    suggestions.push(entry_path);
-                }
+        if let Some(name) = entry_path.file_name().and_then(|n| n.to_str()) {
+            let dist = levenshtein_distance(target_name, name);
+            // Lógica de sugestão: distância de Levenshtein ou contenção de substring
+            if dist <= 3 || name.contains(target_name) || target_name.contains(name) {
+                suggestions.push(entry_path);
             }
         }
     }
 
     if suggestions.is_empty() {
-        println!("{}", "✖ Nenhuma sugestão encontrada.".red());
+        println!("{}", "✖ Nenhuma sugestão próxima encontrada.".red());
         return None;
     }
 
-    // Se houver apenas uma sugestão muito próxima, perguntar
+    // Se houver apenas uma sugestão muito próxima, perguntar de forma amigável
     if suggestions.len() == 1 {
         let sug = &suggestions[0];
         let prompt = format!("Você quis dizer '{}'?", sug.display());
@@ -75,7 +94,7 @@ pub fn get_valid_path(input: &str, is_dir: bool) -> Option<PathBuf> {
             return Some(sug.clone());
         }
     } else {
-        // Se houver várias, deixar escolher
+        // Se houver várias, deixar escolher interativamente
         let mut options: Vec<String> = suggestions.iter().map(|p| p.display().to_string()).collect();
         options.push("Nenhum destes".to_string());
         
@@ -97,8 +116,12 @@ pub fn ensure_path(provided: Option<&&str>, prompt: &str, is_dir: bool) -> Optio
         }
     }
 
-    // Se não foi fornecido ou o fornecido era inválido e recusado, pedir interativamente
-    let input = inquire::Text::new(prompt).prompt().ok()?;
+    // Se não foi fornecido ou o fornecido era inválido e recusado, pedir interativamente via CLI
+    let input = match inquire::Text::new(prompt).prompt() {
+        Ok(text) => text,
+        Err(_) => return None, // Usuário cancelou ou erro no prompt
+    };
+
     if input.trim().is_empty() { return None; }
     
     get_valid_path(&input, is_dir)
