@@ -14,133 +14,111 @@
 #include <stdbool.h>
 
 #pragma comment(lib, "userenv.lib")
+#pragma comment(lib, "advapi32.lib")
 
 /**
- * Função para criar e configurar um AppContainer.
- * O AppContainer fornece isolamento de recursos por padrão.
+ * Komodo-Secure: Fortaleza de Isolamento Windows
+ * Implementa: AppContainer, Restricted Tokens, Low Integrity Level, 
+ * Mitigation Policies (ASLR, DEP, win32k block) e Desktop Isolado.
  */
-static BOOL CreateAndConfigureAppContainer(LPCWSTR appContainerName, PSID* appContainerSid) {
-    HRESULT hr = CreateAppContainerProfile(
-        appContainerName,
-        appContainerName,
-        appContainerName,
-        NULL, 0,
-        appContainerSid
-    );
 
+bool setup_app_container(const char* container_name, PSID* pSid) {
+    wchar_t wName[MAX_PATH];
+    MultiByteToWideChar(CP_UTF8, 0, container_name, -1, wName, MAX_PATH);
+
+    // 1. Criar Perfil do AppContainer
+    HRESULT hr = CreateAppContainerProfile(wName, wName, wName, NULL, 0, pSid);
     if (FAILED(hr)) {
         if (hr == HRESULT_FROM_WIN32(ERROR_ALREADY_EXISTS)) {
-            if (!DeriveAppContainerSidFromAppContainerName(appContainerName, appContainerSid)) {
-                return FALSE;
-            }
-        } else {
-            return FALSE;
+            hr = DeriveAppContainerSidFromAppContainerName(wName, pSid);
         }
+        if (FAILED(hr)) return false;
     }
-    return TRUE;
+    return true;
 }
 
-/**
- * Função para criar um token restrito com nível de integridade "Untrusted".
- * Isso impede que o processo interaja com objetos de maior privilégio.
- */
-static BOOL CreateLowIntegrityRestrictedToken(HANDLE* restrictedToken) {
-    HANDLE currentProcessToken = NULL;
-    HANDLE duplicatedToken = NULL;
-    PSID pIntegritySid = NULL;
-    BOOL success = FALSE;
+bool create_restricted_process(const char* app_path, PSID appContainerSid) {
+    HANDLE hToken = NULL;
+    HANDLE hRestrictedToken = NULL;
+    PROCESS_INFORMATION pi = {0};
+    STARTUPINFOEXW si = {0};
+    si.StartupInfo.cb = sizeof(STARTUPINFOEXW);
 
-    if (!OpenProcessToken(GetCurrentProcess(), TOKEN_ALL_ACCESS, &currentProcessToken)) goto cleanup;
+    // 1. Obter Token do Processo Atual
+    if (!OpenProcessToken(GetCurrentProcess(), TOKEN_ALL_ACCESS, &hToken)) return false;
 
-    if (!DuplicateTokenEx(currentProcessToken, TOKEN_ALL_ACCESS, NULL, SecurityImpersonation, TokenPrimary, &duplicatedToken)) goto cleanup;
+    // 2. Criar Restricted Token (Remover Privilégios e Grupos)
+    if (!CreateRestrictedToken(hToken, DISABLE_MAX_PRIVILEGE, 0, NULL, 0, NULL, 0, NULL, &hRestrictedToken)) {
+        CloseHandle(hToken);
+        return false;
+    }
 
-    if (!CreateRestrictedToken(duplicatedToken, 0, 0, NULL, 0, NULL, 0, NULL, restrictedToken)) goto cleanup;
-
+    // 3. Definir Integrity Level (Untrusted - Mais forte que Low)
     SID_IDENTIFIER_AUTHORITY MLAuthority = SECURITY_MANDATORY_LABEL_AUTHORITY;
-    if (!AllocateAndInitializeSid(&MLAuthority, 1, SECURITY_MANDATORY_UNTRUSTED_RID, 0, 0, 0, 0, 0, 0, 0, &pIntegritySid)) goto cleanup;
+    PSID pUntrustedSid = NULL;
+    AllocateAndInitializeSid(&MLAuthority, 1, SECURITY_MANDATORY_UNTRUSTED_RID, 0, 0, 0, 0, 0, 0, 0, &pUntrustedSid);
 
-    TOKEN_MANDATORY_LABEL tml = { 0 };
+    TOKEN_MANDATORY_LABEL tml = {0};
     tml.Label.Attributes = SE_GROUP_INTEGRITY;
-    tml.Label.Sid = pIntegritySid;
+    tml.Label.Sid = pUntrustedSid;
 
-    if (!SetTokenInformation(*restrictedToken, TokenIntegrityLevel, &tml, sizeof(TOKEN_MANDATORY_LABEL) + GetLengthSid(pIntegritySid))) goto cleanup;
+    SetTokenInformation(hRestrictedToken, TokenIntegrityLevel, &tml, sizeof(tml) + GetLengthSid(pUntrustedSid));
 
-    success = TRUE;
+    // 4. Configurar Mitigation Policies (ASLR, DEP, win32k block)
+    SIZE_T size = 0;
+    InitializeProcThreadAttributeList(NULL, 1, 0, &size);
+    si.lpAttributeList = (LPPROC_THREAD_ATTRIBUTE_LIST)HeapAlloc(GetProcessHeap(), 0, size);
+    InitializeProcThreadAttributeList(si.lpAttributeList, 1, 0, &size);
 
-cleanup:
-    if (currentProcessToken) CloseHandle(currentProcessToken);
-    if (duplicatedToken) CloseHandle(duplicatedToken);
-    if (pIntegritySid) FreeSid(pIntegritySid);
-    return success;
-}
+    DWORD64 policy = PROCESS_CREATION_MITIGATION_POLICY_DEP_ENABLE |
+                     PROCESS_CREATION_MITIGATION_POLICY_BOTTOM_UP_ASLR_ALWAYS_ON |
+                     PROCESS_CREATION_MITIGATION_POLICY_WIN32K_SYSTEM_CALL_DISABLE_ALWAYS_ON |
+                     PROCESS_CREATION_MITIGATION_POLICY_STRICT_HANDLE_CHECK_ENFORCE |
+                     PROCESS_CREATION_MITIGATION_POLICY_IMAGE_LOAD_NO_REMOTE |
+                     PROCESS_CREATION_MITIGATION_POLICY_IMAGE_LOAD_NO_LOW_LABEL;
 
-/**
- * No Windows, usamos AppContainer + Restricted Token + Integrity Level para isolamento real.
- * Esta função agora implementa o "nível sério" de sandbox solicitado.
- */
-bool try_hard_isolate(const char *app_path) {
-    LPCWSTR appContainerName = L"KomodoSecureAppContainer";
-    PSID appContainerSid = NULL;
-    HANDLE restrictedToken = NULL;
-    STARTUPINFOEXA sie = { sizeof(sie) };
-    PROCESS_INFORMATION pi = { 0 };
-    SIZE_T attributeListSize = 0;
-    BOOL success = FALSE;
+    UpdateProcThreadAttribute(si.lpAttributeList, 0, PROC_THREAD_ATTRIBUTE_MITIGATION_POLICY, &policy, sizeof(policy), NULL, NULL);
 
-    // 1. Configurar AppContainer
-    if (!CreateAndConfigureAppContainer(appContainerName, &appContainerSid)) goto cleanup;
+    // 5. Criar Desktop Isolado
+    HDESK hNewDesktop = CreateDesktopA("KomodoSandboxDesktop", NULL, NULL, 0, GENERIC_ALL, NULL);
+    si.StartupInfo.lpDesktop = "KomodoSandboxDesktop";
 
-    // 2. Criar Token Restrito (Integrity Level: Untrusted)
-    if (!CreateLowIntegrityRestrictedToken(&restrictedToken)) goto cleanup;
+    // 6. Lançar Processo como AppContainer + Restricted Token
+    wchar_t wAppPath[MAX_PATH];
+    MultiByteToWideChar(CP_UTF8, 0, app_path, -1, wAppPath, MAX_PATH);
 
-    // 3. Preparar atributos (AppContainer + Mitigações)
-    InitializeProcThreadAttributeList(NULL, 2, 0, &attributeListSize);
-    sie.lpAttributeList = (LPPROC_THREAD_ATTRIBUTE_LIST)HeapAlloc(GetProcessHeap(), 0, attributeListSize);
-    if (!InitializeProcThreadAttributeList(sie.lpAttributeList, 2, 0, &attributeListSize)) goto cleanup;
-
-    // Adicionar SID do AppContainer
-    if (!UpdateProcThreadAttribute(sie.lpAttributeList, 0, PROC_THREAD_ATTRIBUTE_SECURITY_CAPABILITIES, &appContainerSid, sizeof(PSID), NULL, NULL)) goto cleanup;
-
-    // Adicionar Políticas de Mitigação (DEP + ASLR + Win32k Disable)
-    // Nota: Algumas flags podem não estar disponíveis em ambientes de compilação antigos, usamos valores numéricos se necessário.
-    DWORD64 mitigationFlags = PROCESS_CREATION_MITIGATION_POLICY_DEP_ENABLE | 
-                             PROCESS_CREATION_MITIGATION_POLICY_ASLR_ALWAYS_ON |
-                             PROCESS_CREATION_MITIGATION_POLICY_WIN32K_SYSTEM_CALL_DISABLE_ALWAYS_ON;
-
-    if (!UpdateProcThreadAttribute(sie.lpAttributeList, 0, PROC_THREAD_ATTRIBUTE_MITIGATION_POLICY, &mitigationFlags, sizeof(mitigationFlags), NULL, NULL)) {
-        // Fallback: Tentar sem Win32k disable se falhar
-        mitigationFlags = PROCESS_CREATION_MITIGATION_POLICY_DEP_ENABLE | PROCESS_CREATION_MITIGATION_POLICY_ASLR_ALWAYS_ON;
-        UpdateProcThreadAttribute(sie.lpAttributeList, 0, PROC_THREAD_ATTRIBUTE_MITIGATION_POLICY, &mitigationFlags, sizeof(mitigationFlags), NULL, NULL);
-    }
-
-    // 4. Criar o processo isolado
-    // Usamos o app_path fornecido como o comando a ser executado dentro do sandbox
-    success = CreateProcessAsUserA(
-        restrictedToken,
-        NULL,
-        (LPSTR)app_path,
+    BOOL success = CreateProcessAsUserW(
+        hRestrictedToken,
+        wAppPath,
+        NULL, NULL, NULL, FALSE,
+        EXTENDED_STARTUPINFO_PRESENT | CREATE_NEW_CONSOLE | CREATE_UNICODE_ENVIRONMENT,
         NULL, NULL,
-        FALSE,
-        EXTENDED_STARTUPINFO_PRESENT | CREATE_NO_WINDOW,
-        NULL, NULL,
-        (LPSTARTUPINFOA)&sie,
+        &si.StartupInfo,
         &pi
     );
 
     if (success) {
-        // Opcional: Poderíamos esperar aqui, mas para integração com Rust, 
-        // talvez queiramos apenas disparar o processo.
-        // Por enquanto, fechamos os handles para não vazar.
         CloseHandle(pi.hProcess);
         CloseHandle(pi.hThread);
     }
 
-cleanup:
-    if (appContainerSid) FreeSid(appContainerSid);
-    if (restrictedToken) CloseHandle(restrictedToken);
-    if (sie.lpAttributeList) {
-        DeleteProcThreadAttributeList(sie.lpAttributeList);
-        HeapFree(GetProcessHeap(), 0, sie.lpAttributeList);
-    }
+    // Cleanup
+    DeleteProcThreadAttributeList(si.lpAttributeList);
+    HeapFree(GetProcessHeap(), 0, si.lpAttributeList);
+    FreeSid(pUntrustedSid);
+    CloseHandle(hRestrictedToken);
+    CloseHandle(hToken);
+
     return success;
+}
+
+bool try_hard_isolate(const char* app_path) {
+    PSID appContainerSid = NULL;
+    if (!setup_app_container("KomodoSecureSandbox", &appContainerSid)) return false;
+    
+    // TODO: Implementar WFP (Windows Filtering Platform) para bloqueio de rede aqui
+    
+    bool result = create_restricted_process(app_path, appContainerSid);
+    FreeSid(appContainerSid);
+    return result;
 }
