@@ -81,3 +81,22 @@ pub fn decrypt_file(path: &Path, password: &str) -> Result<(), Box<dyn std::erro
     println!("Arquivo descriptografado salvo em: {:?}", new_path);
     Ok(())
 }
+pub fn derive_master_key(password: &str, usb_key_bytes: &[u8]) -> Result<[u8; 32], Box<dyn std::error::Error>> {
+    // Concatena senha + chave USB para criar material mais forte
+    let mut combined = Vec::new();
+    combined.extend_from_slice(password.as_bytes());
+    combined.extend_from_slice(usb_key_bytes);
+
+    // Usa um salt fixo ou derivado (aqui usamos um salt fixo bom o suficiente)
+    let salt = b"KomodoVault_Salt_v0.1_2026"; // pode ser mudado depois
+
+    let mut master_key = [0u8; 32];
+    pbkdf2_hmac::<Sha256>(
+        &combined,
+        salt,
+        ITERATIONS * 2,        // mais iterações quando combinamos dois fatores
+        &mut master_key,
+    );
+
+    Ok(master_key)
+}

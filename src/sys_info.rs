@@ -1,11 +1,8 @@
-mod vault;
-mod komodo_mb_usage;
-use sysinfo::{
-    Components, Disks, Networks, System,
-};
+use crate::vault;
+use crate::komodo_mb_usage;
+use sysinfo::{ Components, Disks, Networks, System };
 use std::ffi::{c_char, CString};
 use windows::Win32::Security::PSID;
-
 
 unsafe extern "C" {
     fn setup_app_container(container_name: *const u16, pSid: *mut PSID) -> bool;
@@ -23,21 +20,27 @@ pub struct SystemOptions {
     pub networks: bool,
     pub processes: bool,
 }
-pub fn check_pid(pid: i32) -> bool {
+pub fn check_pid(pid: pid) -> bool {
     let mut sys_info = System::new_all();
     sys_info.refresh_all();
-    sys_info.processes().contains_key(&pid)
+
+    let running = sys_info.processes().contains_key(&pid);
+    println!("PID {} is {}", pid, if running { "running" } else { "not running" });
+
+    running
 }
+
 pub fn existent_pids(container_name: &str) -> Vec<i32> {
     let mut sys_info = System::new_all();
     sys_info.refresh_all();
+
     let mut pids = Vec::new();
-    for process in sys_info.processes() {
-        if process.1.name().to_string_lossy().contains(container_name) {
-            pids.push(*process.0);
+    for (pid, process) in sys_info.processes() {
+        if process.name().to_string_lossy().contains(container_name) {
+            pids.push(*pid); // pid é &Pid, desreferenciando
         }
     }
-    pids
+    pid
 }
 
 pub fn system_information(options: SystemOptions) {
@@ -82,5 +85,5 @@ if options.processes{  // Informações de Processos
     for process in sys_info.processes() {
         println!("  - {}: {}% CPU, {} MB memory", process.name(), process.cpu_usage(), process.memory() as f64 / 1024.0);
     }
-}
+  }
 }

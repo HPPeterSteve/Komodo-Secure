@@ -3,6 +3,9 @@ mod vault;
 mod crypto;
 mod log;
 mod path_assistant;
+mod sys_info;
+mod usb_key;
+mod komodo_mb_usage;   // mantenha se você ainda usa
 
 use colored::*;
 use inquire::Password;
@@ -28,6 +31,11 @@ encrypt <file> [pass]      → criptografa arquivo (senha opcional)
 decrypt <file> [pass]      → descriptografa arquivo (senha opcional)
 remove-file <vault> <file> → remove arquivo do cofre
 status <vault>             → status do cofre
+run-in-sandbox <dir>       → roda diretório em sandbox
+system-info                → informações do sistema
+check-pid <pid>            → checa se PID está rodando
+existent-pids <name>       → lista PIDs de processos contendo nome
+print-memory-usage         → exibe uso de memória
 help                       → ajuda
 exit                       → sair
 "
@@ -222,11 +230,47 @@ fn handle_command(parts: Vec<&str>) {
                 }
             }
         }
-        "run_in_sandbox" => {
+        "run-in-sandbox" => {
             if let Some(dir) = path_assistant::ensure_path(parts.get(1), "Diretório para rodar em sandbox:", true) {
                 log::info(&format!("Rodando diretório em sandbox: {:?}", dir));
                 vault::run_in_sandbox(dir.to_str().unwrap());
             }
+        }
+        "system-info" => {
+            log::info("Exibindo informações do sistema");
+            sys_info::print_system_info();
+        }
+        "check-pid" => {
+            if let Some(pid_str) = parts.get(1) {
+                if let Ok(pid) = pid_str.parse::<i32>() {
+                    log::info(&format!("Checando PID: {}", pid));
+                    sys_info::check_pid(pid);
+                } else {
+                    println!("{}", "✖ PID inválido. Use um número inteiro.".red());
+                }
+            } else {
+                println!("{}", "✖ Por favor, forneça um PID para verificar.".red());
+            }
+        }
+        "existent-pids" => {
+            if let Some(name) = parts.get(1) {
+                log::info(&format!("Listando PIDs existentes para: {}", name));
+                let pids = sys_info::existent_pids(name);
+                if pids.is_empty() {
+                    println!("{}", format!("Nenhum processo encontrado contendo '{}'", name).yellow());
+                } else {
+                    println!("{}", format!("Processos encontrados contendo '{}':", name).green());
+                    for pid in pids {
+                        println!("  {}", format!("• PID: {}", pid).white());
+                    }
+                }
+            } else {
+                println!("{}", "✖ Por favor, forneça um nome para buscar os PIDs.".red());
+            }
+        }
+        "print-memoy-usage" => {
+            log::info("Exibindo uso de memória");
+            komodo_mb_usage::print_memory_winapi();
         }
         
 
@@ -262,7 +306,9 @@ fn main() {
 
     println!(
         "{}",
-        "Komodo-Secure v0.6.11 iniciado! 🛡️ Sub-sistema de Assistência de Caminhos ATIVO. Digite 'help'".bright_green()
+        "Komodo-Secure v0.62.0 iniciado! 🛡️ Sub-sistema de Assistência de Caminhos ATIVO.
+        todos os direitos reservados.
+        Digite 'help'".bright_green()
     );
     ctrlc::set_handler(|| {
         println!("\n^C");
