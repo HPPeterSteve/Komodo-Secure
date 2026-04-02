@@ -30,7 +30,7 @@ pub fn run_in_sandbox(path: &str) {
     };
 
     unsafe {
-        // 1️⃣ Cria um nome único para o AppContainer
+   
         let container_name = format!("KomodoSandbox_{}", std::process::id());
         let c_container_name = match CString::new(container_name.clone()) {
             Ok(s) => s,
@@ -42,12 +42,12 @@ pub fn run_in_sandbox(path: &str) {
 
         let mut sid = PSID(std::ptr::null_mut());
 
-        // 3️⃣ Cria o AppContainer
+        // Cria o AppContainer
         if setup_app_container(c_container_name.as_ptr(), &mut sid) {
             println!("✅ AppContainer '{}' configurado com sucesso", container_name);
             println!("SID do AppContainer: {:?}", sid);
 
-            // 4️⃣ Tenta isolar o processo
+            //  Tenta isolar o processo
             if try_hard_isolate(c_path.as_ptr()) {
                 println!("✅ Processo isolado com sucesso (Sandbox + Firewall + Desktop)");
             } else {

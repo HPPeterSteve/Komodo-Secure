@@ -1,6 +1,6 @@
 [package]
 name = "komodo-secure"
-version = "0.6.0"
+version = "0.6.12"
 edition = "2024"
 build = "build.rs"
 
@@ -27,6 +27,8 @@ sha2 = "0.10"
 cc = "1.1"
 chrono = "0.4"
 nix = { version = "0.31", features = ["user"] }
+ctrlc = "3.5.2"
+sysinfo = "0.38"
 
 [target.'cfg(windows)'.dependencies]
 

@@ -10,22 +10,25 @@
 #pragma comment(lib, "userenv.lib")
 #pragma comment(lib, "advapi32.lib")
 
-// Definindo os valores manualmente para compatibilidade total
-#define K_DEP_ENABLE      0x0000000000000001ULL
-#define K_ASLR_ALWAYS_ON  0x0000000000000004ULL
-#define K_STRICT_HANDLE   0x0000000000000010ULL // O que estava dando erro
-#define K_NO_REMOTE_LOAD  (1ULL << 52)
+// Mitigation policies (valores corretos do SDK)
+#define PROCESS_CREATION_MITIGATION_POLICY_DEP_ENABLE                  0x00000001ULL
+#define PROCESS_CREATION_MITIGATION_POLICY_ASLR_FORCE_RELOCATE_IMAGES_ALWAYS_ON 0x00000100ULL
+#define PROCESS_CREATION_MITIGATION_POLICY_STRICT_HANDLE_CHECKS_ALWAYS_ON      0x00010000ULL
 
 bool setup_app_container(const char* container_name, PSID* pSid) {
     wchar_t wName[MAX_PATH];
-    if (MultiByteToWideChar(CP_UTF8, 0, container_name, -1, wName, MAX_PATH) == 0) return false;
+    if (MultiByteToWideChar(CP_UTF8, 0, container_name, -1, wName, MAX_PATH) == 0)
+        return false;
 
     HRESULT hr = CreateAppContainerProfile(wName, wName, wName, NULL, 0, pSid);
     if (FAILED(hr)) {
         if (hr == HRESULT_FROM_WIN32(ERROR_ALREADY_EXISTS)) {
             hr = DeriveAppContainerSidFromAppContainerName(wName, pSid);
         }
-        if (FAILED(hr)) return false;
+        if (FAILED(hr)) {
+            printf("Erro Create/Derive AppContainer: 0x%08X\n", hr);
+            return false;
+        }
     }
     return true;
 }
@@ -37,78 +40,129 @@ bool create_restricted_process(const char* app_path, PSID appContainerSid) {
     STARTUPINFOEXW si = {0};
     si.StartupInfo.cb = sizeof(STARTUPINFOEXW);
 
-    if (!OpenProcessToken(GetCurrentProcess(), TOKEN_ALL_ACCESS, &hToken)) return false;
+    if (!OpenProcessToken(GetCurrentProcess(), TOKEN_ALL_ACCESS, &hToken)) {
+        printf("Erro OpenProcessToken: %lu\n", GetLastError());
+        return false;
+    }
 
+    // Cria token restrito (opcional com AppContainer, mas reforça)
     if (!CreateRestrictedToken(hToken, DISABLE_MAX_PRIVILEGE, 0, NULL, 0, NULL, 0, NULL, &hRestrictedToken)) {
+        printf("Erro CreateRestrictedToken: %lu\n", GetLastError());
         CloseHandle(hToken);
         return false;
     }
+    CloseHandle(hToken);
 
-    // Nível Untrusted (Integridade mínima)
+    // (Opcional) Força Low Integrity - AppContainer já força Low/Untrusted na maioria dos casos
+    /*
     SID_IDENTIFIER_AUTHORITY MLAuthority = SECURITY_MANDATORY_LABEL_AUTHORITY;
-    PSID pUntrustedSid = NULL;
-    if (AllocateAndInitializeSid(&MLAuthority, 1, SECURITY_MANDATORY_UNTRUSTED_RID, 0, 0, 0, 0, 0, 0, 0, &pUntrustedSid)) {
+    PSID pLowSid = NULL;
+    if (AllocateAndInitializeSid(&MLAuthority, 1, SECURITY_MANDATORY_LOW_RID, 0,0,0,0,0,0,0, &pLowSid)) {
         TOKEN_MANDATORY_LABEL tml = {0};
         tml.Label.Attributes = SE_GROUP_INTEGRITY;
-        tml.Label.Sid = pUntrustedSid;
-        SetTokenInformation(hRestrictedToken, TokenIntegrityLevel, &tml, (DWORD)(sizeof(tml) + GetLengthSid(pUntrustedSid)));
+        tml.Label.Sid = pLowSid;
+        SetTokenInformation(hRestrictedToken, TokenIntegrityLevel, &tml,
+                            sizeof(tml) + GetLengthSid(pLowSid));
+        FreeSid(pLowSid);
     }
+    */
 
-    SIZE_T size = 0;
-    InitializeProcThreadAttributeList(NULL, 1, 0, &size);
-    si.lpAttributeList = (LPPROC_THREAD_ATTRIBUTE_LIST)HeapAlloc(GetProcessHeap(), 0, size);
-    
-    if (!si.lpAttributeList || !InitializeProcThreadAttributeList(si.lpAttributeList, 1, 0, &size)) {
+    // ==================== Atributos para criação ====================
+    SIZE_T attrSize = 0;
+    InitializeProcThreadAttributeList(NULL, 2, 0, &attrSize);
+
+    si.lpAttributeList = (LPPROC_THREAD_ATTRIBUTE_LIST)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, attrSize);
+    if (!si.lpAttributeList || !InitializeProcThreadAttributeList(si.lpAttributeList, 2, 0, &attrSize)) {
+        printf("Erro InitializeProcThreadAttributeList: %lu\n", GetLastError());
+        CloseHandle(hRestrictedToken);
         return false;
     }
 
-    // Usando os valores manuais que definimos no topo do arquivo
-    DWORD64 policy = K_DEP_ENABLE | K_ASLR_ALWAYS_ON | K_STRICT_HANDLE | K_NO_REMOTE_LOAD;
+    // 1. SECURITY_CAPABILITIES → necessário para AppContainer
+    SECURITY_CAPABILITIES sc = {0};
+    sc.AppContainerSid = appContainerSid;
+    sc.Capabilities = NULL;
+    sc.CapabilityCount = 0;
 
-    UpdateProcThreadAttribute(
-        si.lpAttributeList, 
-        0, 
-        PROC_THREAD_ATTRIBUTE_MITIGATION_POLICY, 
-        &policy, 
-        sizeof(policy), 
-        NULL, 
-        NULL
-    );
+    if (!UpdateProcThreadAttribute(si.lpAttributeList, 0,
+        PROC_THREAD_ATTRIBUTE_SECURITY_CAPABILITIES,
+        &sc, sizeof(sc), NULL, NULL)) {
+        printf("Erro UpdateProcThreadAttribute SECURITY_CAPABILITIES: %lu\n", GetLastError());
+        goto cleanup;
+    }
 
-    // Desktop Isolado
-    si.StartupInfo.lpDesktop = (LPWSTR)L"KomodoSandboxDesktop";
+    // 2. Mitigation Policy (DEP + ASLR + Strict Handle)
+    DWORD64 policy = PROCESS_CREATION_MITIGATION_POLICY_DEP_ENABLE |
+                     PROCESS_CREATION_MITIGATION_POLICY_ASLR_FORCE_RELOCATE_IMAGES_ALWAYS_ON |
+                     PROCESS_CREATION_MITIGATION_POLICY_STRICT_HANDLE_CHECKS_ALWAYS_ON;
+
+    if (!UpdateProcThreadAttribute(si.lpAttributeList, 0,
+        PROC_THREAD_ATTRIBUTE_MITIGATION_POLICY,
+        &policy, sizeof(policy), NULL, NULL)) {
+        printf("Erro UpdateProcThreadAttribute MITIGATION_POLICY: %lu\n", GetLastError());
+        goto cleanup;
+    }
+
+    // Desktop isolado (cuidado: se não existir, pode falhar)
+    // si.StartupInfo.lpDesktop = L"KomodoSandboxDesktop";
 
     wchar_t wAppPath[MAX_PATH];
     MultiByteToWideChar(CP_UTF8, 0, app_path, -1, wAppPath, MAX_PATH);
 
-    BOOL success = CreateProcessAsUserW(
+    // ==================== Cria o processo ====================
+    BOOL success = CreateProcessAsUser(
         hRestrictedToken,
-        wAppPath,
-        NULL, NULL, NULL, FALSE,
-        EXTENDED_STARTUPINFO_PRESENT | CREATE_NEW_CONSOLE | CREATE_UNICODE_ENVIRONMENT,
-        NULL, NULL,
+        wAppPath,           // lpApplicationName
+        NULL,               // lpCommandLine
+        NULL, NULL,         // lpProcessAttributes / lpThreadAttributes
+        FALSE,              // bInheritHandles
+        EXTENDED_STARTUPINFO_PRESENT | CREATE_NEW_CONSOLE,
+        NULL,               // lpEnvironment
+        NULL,               // lpCurrentDirectory
         &si.StartupInfo,
         &pi
     );
 
-    if (success) {
-        CloseHandle(pi.hProcess);
-        CloseHandle(pi.hThread);
+    if (!success) {
+        printf("Erro CreateProcessAsUser: %lu\n", GetLastError());
+        goto cleanup;
     }
 
-    DeleteProcThreadAttributeList(si.lpAttributeList);
-    HeapFree(GetProcessHeap(), 0, si.lpAttributeList);
-    if (pUntrustedSid) FreeSid(pUntrustedSid);
-    CloseHandle(hRestrictedToken);
-    CloseHandle(hToken);
-    
-    return success != 0;
+    printf("Processo sandbox criado com sucesso! PID: %lu\n", pi.dwProcessId);
+
+    // ==================== Job Object (mata processo ao fechar) ====================
+    HANDLE hJob = CreateJobObject(NULL, NULL);
+    if (hJob) {
+        JOBOBJECT_EXTENDED_LIMIT_INFORMATION jeli = {0};
+        jeli.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+
+        SetInformationJobObject(hJob, JobObjectExtendedLimitInformation, &jeli, sizeof(jeli));
+        AssignProcessToJobObject(hJob, pi.hProcess);
+        // Não feche o hJob aqui se quiser manter o job vivo
+    }
+
+cleanup:
+    if (si.lpAttributeList) {
+        DeleteProcThreadAttributeList(si.lpAttributeList);
+        HeapFree(GetProcessHeap(), 0, si.lpAttributeList);
+    }
+    if (hRestrictedToken) CloseHandle(hRestrictedToken);
+    if (pi.hProcess) CloseHandle(pi.hProcess);
+    if (pi.hThread)  CloseHandle(pi.hThread);
+
+    return success;
 }
 
 bool try_hard_isolate(const char* app_path) {
     PSID appContainerSid = NULL;
-    if (!setup_app_container("KomodoSecureSandbox", &appContainerSid)) return false;
-    bool result = create_restricted_process(app_path, appContainerSid);
-    if (appContainerSid) FreeSid(appContainerSid);
+    bool result = false;
+
+    if (setup_app_container("KomodoSecureSandbox", &appContainerSid)) {
+        result = create_restricted_process(app_path, appContainerSid);
+    }
+
+    if (appContainerSid)
+        FreeSid(appContainerSid);
+
     return result;
 }

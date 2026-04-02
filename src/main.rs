@@ -7,6 +7,7 @@ mod path_assistant;
 use colored::*;
 use inquire::Password;
 use rustyline::DefaultEditor;
+use rustyline::error::ReadlineError;
 use std::io::{self, IsTerminal};
 use std::path::PathBuf;
 
@@ -50,7 +51,11 @@ fn get_password(prompt_text: &str, provided_pass: Option<&&str>) -> String {
         .without_confirmation()
         .prompt()
         .unwrap_or_default()
+
+    
 }
+
+
 
 fn handle_command(parts: Vec<&str>) {
     match parts[0] {
@@ -234,8 +239,9 @@ fn handle_command(parts: Vec<&str>) {
             if !answer.is_empty() {
                 cli::questions(answer);
             }
+        
         }
-
+        
         "exit" => {
             log::info("Aplicação encerrada pelo usuário.");
             println!("{}", "Saindo...".yellow());
@@ -256,26 +262,38 @@ fn main() {
 
     println!(
         "{}",
-        "Solo-Secure v0.6.0 iniciado! 🛡️ Sub-sistema de Assistência de Caminhos ATIVO. Digite 'help'".bright_green()
+        "Komodo-Secure v0.6.11 iniciado! 🛡️ Sub-sistema de Assistência de Caminhos ATIVO. Digite 'help'".bright_green()
     );
+    ctrlc::set_handler(|| {
+        println!("\n^C");
+        log::info("Aplicação fechando");
+        std::process::exit(0);
+    }).expect("Erro ao definir handler");
 
     loop {
-        let readline = rl.readline(&"SoloSecure> ".bright_blue().to_string());
+        let readline = rl.readline(&"Komodo-Secure> ".bright_blue().to_string());
 
         match readline {
-            Ok(line) => {
-                rl.add_history_entry(line.as_str()).ok();
-                let input = line.trim();
-                if input.is_empty() {
-                    continue;
-                }
-                let parts: Vec<&str> = input.split_whitespace().collect();
-                handle_command(parts);
-            }
-            Err(_) => {
-                log::error("Erro na leitura do terminal.");
-                break;
-            }
+    Ok(line) => {
+        rl.add_history_entry(line.as_str()).ok();
+        let input = line.trim();
+        if input.is_empty() {
+            continue;
         }
+        let parts: Vec<&str> = input.split_whitespace().collect();
+        handle_command(parts);
     }
+
+    Err(ReadlineError::Eof) => {
+        println!("\n^D");
+        log::info("EOF detectado.");
+        break;
+    }
+
+    Err(err) => {
+        log::error(&format!("Erro na leitura: {:?}", err));
+        break;
+    }
+    }
+   }
 }

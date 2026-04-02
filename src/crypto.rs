@@ -81,4 +81,3 @@ pub fn decrypt_file(path: &Path, password: &str) -> Result<(), Box<dyn std::erro
     println!("Arquivo descriptografado salvo em: {:?}", new_path);
     Ok(())
 }
-
