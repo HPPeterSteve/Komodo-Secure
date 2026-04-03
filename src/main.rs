@@ -4,9 +4,6 @@ mod crypto;
 mod log;
 mod path_assistant;
 mod sys_info;
-mod usb_key;
-mod komodo_mb_usage;   // mantenha se você ainda usa
-
 use colored::*;
 use inquire::Password;
 use rustyline::DefaultEditor;
@@ -214,6 +211,7 @@ fn handle_command(parts: Vec<&str>) {
                 }
             }
         }
+    
 
         "secure-copy" => {
             let file = path_assistant::ensure_path(parts.get(1), "Arquivo de origem:", false);
@@ -236,44 +234,44 @@ fn handle_command(parts: Vec<&str>) {
                 vault::run_in_sandbox(dir.to_str().unwrap());
             }
         }
-        "system-info" => {
-            log::info("Exibindo informações do sistema");
-            sys_info::print_system_info();
+        "system-information" => {
+            let options = sys_info::SystemOptions {
+                cpu: parts.contains(&"cpu"),
+                memory: parts.contains(&"memory"),
+                disks: parts.contains(&"disks"),
+                networks: parts.contains(&"networks"),
+                processes: parts.contains(&"processes"),
+            };
+            sys_info::system_information(options);
         }
-        "check-pid" => {
-            if let Some(pid_str) = parts.get(1) {
-                if let Ok(pid) = pid_str.parse::<i32>() {
-                    log::info(&format!("Checando PID: {}", pid));
-                    sys_info::check_pid(pid);
-                } else {
-                    println!("{}", "✖ PID inválido. Use um número inteiro.".red());
-                }
-            } else {
-                println!("{}", "✖ Por favor, forneça um PID para verificar.".red());
-            }
+        "list-process-status" => {
+            let options = sys_info::SystemOptions {
+                cpu: false,
+                memory: false,
+                disks: false,
+                networks: false,
+                processes: true,
+            };
+            sys_info::list_process_status(&options);
         }
-        "existent-pids" => {
-            if let Some(name) = parts.get(1) {
-                log::info(&format!("Listando PIDs existentes para: {}", name));
-                let pids = sys_info::existent_pids(name);
-                if pids.is_empty() {
-                    println!("{}", format!("Nenhum processo encontrado contendo '{}'", name).yellow());
-                } else {
-                    println!("{}", format!("Processos encontrados contendo '{}':", name).green());
-                    for pid in pids {
-                        println!("  {}", format!("• PID: {}", pid).white());
+        "check-sandbox" => {
+            sys_info::check_setup_app_container_and_try_hard_isolate();
+        }
+        "derive-master-key" => {
+            let password = inquire::Password::new("Senha mestre:").prompt().unwrap_or_default();
+            let usb_key_input = inquire::Text::new("Chave USB (hex):").prompt().unwrap_or_default();
+            if let Ok(usb_key_bytes) = hex::decode(usb_key_input.trim()) {
+                match crypto::derive_master_key(&password, &usb_key_bytes) {
+                    Ok(master_key) => println!("{}", format!("Master Key derivada: {}", hex::encode(master_key)).green()),
+                    Err(e) => {
+                        log::error(&format!("Erro em derive-master-key: {}", e));
+                        eprintln!("{}", format!("✖ Erro: {}", e).red());
                     }
                 }
             } else {
-                println!("{}", "✖ Por favor, forneça um nome para buscar os PIDs.".red());
+                println!("{}", "✖ Chave USB inválida. Certifique-se de inserir um valor hexadecimal válido.".red());
             }
         }
-        "print-memoy-usage" => {
-            log::info("Exibindo uso de memória");
-            komodo_mb_usage::print_memory_winapi();
-        }
-        
-
         "help" => {
             show_help();
             println!("{}", "Digite o número da pergunta (ou Enter para pular):".purple());
