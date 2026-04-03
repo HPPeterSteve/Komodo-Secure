@@ -13,34 +13,50 @@ walkdir = "2"
 io = "0.0.2"
 colored = "3.1.1"
 inquire = "0.9.4"
-anyhow = "1.0"  
+anyhow = "1.0"
 rustyline = "17.0.2"
 home = "0.5.12"
 notify = "8.2.0"
-aes-gcm = "0.10"
-rand = "0.8.0"
-aead = "0.5"
-argon2 = "0.5"
-pbkdf2 = "0.12"
-hmac = "0.12"
-sha2 = "0.10"
-cc = "1.1"
 chrono = "0.4"
-nix = { version = "0.31", features = ["user"] }
 ctrlc = "3.5.2"
 hex = "0.4.3"
 
+# ================== CRYPTO (ALINHADO) ==================
+aes-gcm = "0.10"
+rand = "0.8"
+argon2 = "0.5"
+pbkdf2 = "0.12"
 
+# 🔥 versões compatíveis (digest 0.10)
+hmac = "0.12"
+sha2 = "0.10"
+
+# (opcional - pode remover se não usar diretamente)
+# aead = "0.5"
+
+# ================== SYSTEM ==================
+nix = { version = "0.31", features = ["user"] }
+
+# ================== WINDOWS ==================
 [target.'cfg(windows)'.dependencies]
-
-windows-sys = { version = "0.61.2", features = ["Win32_System_JobObjects", "Win32_Foundation", "Win32_System_Threading"] }
+windows-sys = { version = "0.61.2", features = [
+    "Win32_System_JobObjects",
+    "Win32_Foundation",
+    "Win32_System_Threading"
+] }
 
 windows = { version = "0.62.2", features = [
     "Win32_Foundation",
-    "Win32_Security", # O PSID mora aqui!
+    "Win32_Security",
     "Win32_System_Threading",
     "Win32_System_JobObjects"
 ] }
 
+# ================== BUILD ==================
 [build-dependencies]
 cc = "1.1"
+winres = "0.1"
+
+# ================== PATCH (GARANTE CONSISTÊNCIA) ==================
+[patch.crates-io]
+digest = "0.10.7"
