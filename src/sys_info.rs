@@ -55,8 +55,10 @@ pub fn check_setup_app_container_and_try_hard_isolate() {
             eprintln!("❌ Falha ao configurar AppContainer '{}'", container_name);
         }
     }
+    
     let try_hard_isolate_result =  format!("Resultado de try_hard_isolate: {}", 
     unsafe { try_hard_isolate(container_name.as_ptr() as *const i8) });
+    println!("{}", try_hard_isolate_result);
         
 }
 
