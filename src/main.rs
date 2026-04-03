@@ -27,12 +27,12 @@ secure-copy <file> <vault> [pass] → protege e armazena (senha opcional)
 encrypt <file> [pass]      → criptografa arquivo (senha opcional)
 decrypt <file> [pass]      → descriptografa arquivo (senha opcional)
 remove-file <vault> <file> → remove arquivo do cofre
-status <vault>             → status do cofre
+status <vault>             → mostra status do cofre
 run-in-sandbox <dir>       → roda diretório em sandbox
-system-info                → informações do sistema
-check-pid <pid>            → checa se PID está rodando
-existent-pids <name>       → lista PIDs de processos contendo nome
-print-memory-usage         → exibe uso de memória
+system-information [options] → mostra informações do sistema (cpu, memory, disks, networks, processes)
+list-process-status         → lista status dos processos ativos
+derive-master-key            → deriva master key a partir de senha e chave USB
+check_sandbox                → verifica configuração do sandbox e tenta hard isolate
 help                       → ajuda
 exit                       → sair
 "
@@ -64,7 +64,7 @@ fn get_password(prompt_text: &str, provided_pass: Option<&&str>) -> String {
 
 fn handle_command(parts: Vec<&str>) {
     match parts[0] {
-        "isolate-directory" => {
+       "isolate-directory" => {
             if let Some(dir) = path_assistant::ensure_path(parts.get(1), "Diretório para isolar:", true) {
                 log::info(&format!("Isolando diretório: {:?}", dir));
                 vault::isolate_directory(dir.to_str().unwrap());
@@ -254,24 +254,31 @@ fn handle_command(parts: Vec<&str>) {
             };
             sys_info::list_process_status(&options);
         }
-        "check-sandbox" => {
-            sys_info::check_setup_app_container_and_try_hard_isolate();
-        }
         "derive-master-key" => {
-            let password = inquire::Password::new("Senha mestre:").prompt().unwrap_or_default();
+            let password = inquire::Password::new("Senha:").prompt().unwrap_or_default();
             let usb_key_input = inquire::Text::new("Chave USB (hex):").prompt().unwrap_or_default();
-            if let Ok(usb_key_bytes) = hex::decode(usb_key_input.trim()) {
-                match crypto::derive_master_key(&password, &usb_key_bytes) {
-                    Ok(master_key) => println!("{}", format!("Master Key derivada: {}", hex::encode(master_key)).green()),
-                    Err(e) => {
-                        log::error(&format!("Erro em derive-master-key: {}", e));
-                        eprintln!("{}", format!("✖ Erro: {}", e).red());
-                    }
+            let usb_key_bytes = match hex::decode(usb_key_input.trim()) {
+                Ok(bytes) => bytes,
+                Err(e) => {
+                    log::error(&format!("Erro ao decodificar chave USB: {}", e));
+                    eprintln!("{}", format!("✖ Erro: {}", e).red());
+                    return;
                 }
-            } else {
-                println!("{}", "✖ Chave USB inválida. Certifique-se de inserir um valor hexadecimal válido.".red());
+            };
+
+            match crypto::derive_master_key(&password, &usb_key_bytes) {
+                Ok(master_key) => println!("{}", format!("Master Key derivada: {}", hex::encode(master_key)).green()),
+                Err(e) => {
+                    log::error(&format!("Erro em derive-master-key: {}", e));
+                    eprintln!("{}", format!("✖ Erro: {}", e).red());
+                }
             }
         }
+        "check_sandbox" => {
+            log::info("Executando check_setup_app_container_and_try_hard_isolate");
+            sys_info::check_setup_app_container_and_try_hard_isolate();
+        }
+        
         "help" => {
             show_help();
             println!("{}", "Digite o número da pergunta (ou Enter para pular):".purple());
@@ -304,7 +311,7 @@ fn main() {
 
     println!(
         "{}",
-        "Komodo-Secure v0.62.0 iniciado! 🛡️ Sub-sistema de Assistência de Caminhos ATIVO.
+        "Komodo-Secure v0.7.0 iniciado! 🛡️ Sub-sistema de Assistência de Caminhos ATIVO.
         todos os direitos reservados.
         Digite 'help'".bright_green()
     );

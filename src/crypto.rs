@@ -9,26 +9,19 @@ use argon2::{
 use rand::{RngCore, rngs::OsRng as RandOsRng};
 use std::{fs, path::Path};
 
-
-
-const ITERATIONS: u32 = 100_000; // (não usado mais, mantido pra não quebrar nada)
 const SALT_LEN: usize = 16;
 
-/// Deriva uma chave AES-256 a partir de uma senha e salt (AGORA COM ARGON2)
+/// Deriva uma chave AES-256 a partir de uma senha e salt usando Argon2
 fn derive_key_from_password(password: &str, salt: &[u8]) -> [u8; 32] {
     let argon2 = Argon2::default();
-
     let salt = SaltString::encode_b64(salt).unwrap();
 
-    let hash = argon2
-        .hash_password(password.as_bytes(), &salt)
-        .unwrap();
-
-    let hash_bytes = hash.hash.unwrap().as_bytes();
+    let hash = argon2.hash_password(password.as_bytes(), &salt).unwrap();
+    let hash_str = hash.hash.unwrap();        // guarda o temporário
+    let hash_bytes = hash_str.as_bytes();     // pega os bytes seguros
 
     let mut key = [0u8; 32];
     key.copy_from_slice(&hash_bytes[..32]);
-
     key
 }
 
@@ -40,7 +33,6 @@ pub fn encrypt_file(path: &Path, password: &str) -> Result<(), Box<dyn std::erro
     RandOsRng.fill_bytes(&mut salt);
 
     let key_bytes = derive_key_from_password(password, &salt);
-
     let cipher = Aes256Gcm::new_from_slice(&key_bytes).map_err(|_| "Chave inválida")?;
     let nonce = Aes256Gcm::generate_nonce(&mut OsRng);
 
@@ -59,10 +51,9 @@ pub fn encrypt_file(path: &Path, password: &str) -> Result<(), Box<dyn std::erro
     Ok(())
 }
 
-#[allow(dead_code)]
+/// Descriptografa um arquivo criptografado
 pub fn decrypt_file(path: &Path, password: &str) -> Result<(), Box<dyn std::error::Error>> {
     let data = fs::read(path)?;
-
     if data.len() < SALT_LEN + 12 {
         return Err("Erro: Arquivo corrompido ou muito pequeno.".into());
     }
@@ -84,21 +75,20 @@ pub fn decrypt_file(path: &Path, password: &str) -> Result<(), Box<dyn std::erro
     Ok(())
 }
 
+/// Deriva a chave mestre combinando senha + USB key
 pub fn derive_master_key(password: &str, usb_key_bytes: &[u8]) -> Result<[u8; 32], Box<dyn std::error::Error>> {
     let mut combined = Vec::new();
     combined.extend_from_slice(password.as_bytes());
     combined.extend_from_slice(usb_key_bytes);
 
-    let salt = b"KomodoVault_Salt_v0.1_2026";
+    let salt_bytes = b"KomodoVault_Salt_v0.1_2026";
+    let salt = SaltString::encode_b64(salt_bytes).unwrap();
 
     let argon2 = Argon2::default();
-    let salt = SaltString::encode_b64(salt).unwrap();
+    let hash = argon2.hash_password(&combined, &salt).unwrap();
 
-    let hash = argon2
-        .hash_password(&combined, &salt)
-        .unwrap();
-
-    let hash_bytes = hash.hash.unwrap().as_bytes();
+    let hash_str = hash.hash.unwrap();    // mantém o temporário vivo
+    let hash_bytes = hash_str.as_bytes();
 
     let mut master_key = [0u8; 32];
     master_key.copy_from_slice(&hash_bytes[..32]);
