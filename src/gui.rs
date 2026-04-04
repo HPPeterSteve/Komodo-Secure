@@ -79,8 +79,6 @@ impl KomodoApp {
         
         let p = std::path::Path::new(path);
         if !p.exists() {
-            // Usa a lógica do path_assistant para buscar sugestões (Levenshtein integrado)
-            // Como a função original é interativa, vamos apenas pegar as sugestões aqui
             let parent = p.parent().filter(|p| !p.as_os_str().is_empty()).unwrap_or(std::path::Path::new("."));
             let mut suggestions = Vec::new();
 
@@ -92,9 +90,9 @@ impl KomodoApp {
                         if !is_dir && !entry_path.is_file() { continue; }
 
                         if let Some(name) = entry_path.file_name().and_then(|n| n.to_str()) {
-                            // Chamada interna da lógica de Levenshtein (simulada ou via path_assistant se exposta)
-                            // Aqui integramos a lógica de sugestão visual
-                            suggestions.push(entry_path);
+                            if path_assistant::get_valid_path(name, is_dir).is_some() || name.contains(target_name) {
+                                suggestions.push(entry_path);
+                            }
                         }
                     }
                 }
@@ -130,24 +128,30 @@ impl eframe::App for KomodoApp {
                                 ui.label("Configurações de Caminho:");
                                 ui.horizontal(|ui| {
                                     ui.label("Cofre/Diretório:");
+                                    let vault_path_clone = self.vault_path.clone();
                                     if ui.text_edit_singleline(&mut self.vault_path).changed() {
-                                        self.check_path_suggestions(&self.vault_path, true);
+                                        self.check_path_suggestions(&vault_path_clone, true);
                                     }
                                 });
                                 ui.horizontal(|ui| {
                                     ui.label("Arquivo/Origem:");
+                                    let file_path_clone = self.file_path.clone();
                                     if ui.text_edit_singleline(&mut self.file_path).changed() {
-                                        self.check_path_suggestions(&self.file_path, false);
+                                        self.check_path_suggestions(&file_path_clone, false);
                                     }
                                 });
                                 
                                 if !self.path_suggestions.is_empty() {
                                     ui.colored_label(egui::Color32::YELLOW, "Sugestões (Levenshtein):");
+                                    let mut selected_suggestion = None;
                                     for sug in self.path_suggestions.iter().take(3) {
                                         if ui.button(format!("Usar: {}", sug.display())).clicked() {
-                                            self.file_path = sug.to_string_lossy().to_string();
-                                            self.path_suggestions.clear();
+                                            selected_suggestion = Some(sug.to_string_lossy().to_string());
                                         }
+                                    }
+                                    if let Some(sug_str) = selected_suggestion {
+                                        self.file_path = sug_str;
+                                        self.path_suggestions.clear();
                                     }
                                 }
 
@@ -241,7 +245,6 @@ impl eframe::App for KomodoApp {
                                 ui.horizontal_wrapped(|ui| {
                                     if ui.button("Isolar Diretório (Sandbox C)").clicked() {
                                         if !self.vault_path.is_empty() {
-                                            // Chama a função que integra o sandbox.c
                                             vault::isolate_directory(&self.vault_path);
                                             self.add_log(&format!("Isolamento Sandbox C aplicado em: {}", self.vault_path));
                                         }
