@@ -1,35 +1,83 @@
+/*
+ * build.rs
+ *
+ * Script de build do Cargo — compila vault_security.c + vault_ffi.c
+ * e linka o resultado como biblioteca estática.
+ *
+ * Dependências do sistema (Debian/Ubuntu):
+ *   sudo apt install libssl-dev
+ *
+ * Uso: coloque este arquivo na raiz do projeto Rust (ao lado de Cargo.toml).
+ */
+
+use std::process::Command;
+
+
 fn main() {
-    #[cfg(windows)]
-    {
-        // Configuração do Manifest para privilégios de administrador e isolamento
-        let mut res = winres::WindowsResource::new();
-        res.set_manifest_file("app.manifest");
-        res.compile().unwrap();
+    let out_dir = std::env::var("OUT_DIR").unwrap();
 
-        let mut build = cc::Build::new();
+    /* ── 1. Compilar vault_security.c ────────────────────────────────── */
+    let status = Command::new("gcc")
+        .args([
+            "-O2",
+            "-Wall",
+            "-Wextra",
+            /* Não incluir main() do vault_security.c ao linkar como lib.
+             * Adicionamos -DVAULT_FFI_BUILD para que o vault_security.c
+             * possa condicionar o main() com #ifndef VAULT_FFI_BUILD */
+            "-DVAULT_FFI_BUILD",
+            "-fPIC",
+            "-c",
+            "c_src/vault_security.c",
+            "-o",
+        ])
+        .arg(format!("{}/vault_security.o", out_dir))
+        .args(["-lssl", "-lcrypto", "-lpthread"])
+        .status()
+        .expect("Falha ao invocar gcc para vault_security.c");
 
-        build
-            .file("Core/sandbox.c")
-            .include("Core")
-            .flag_if_supported("/W4")   // warnings MSVC
-            .flag_if_supported("/std:c11");
+    assert!(status.success(), "Compilação de vault_security.c falhou");
 
-        // Verifica se firewall.c existe antes de tentar compilar
-        if std::path::Path::new("Core/firewall.c").exists() {
-            build.file("Core/firewall.c");
-        }
+    /* ── 2. Compilar vault_ffi.c ─────────────────────────────────────── */
+    let status = Command::new("gcc")
+        .args([
+            "-O2",
+            "-Wall",
+            "-Wextra",
+            "-DVAULT_FFI_BUILD",
+            "-fPIC",
+            "-c",
+            "c_src/vault_ffi.c",
+            "-o",
+        ])
+        .arg(format!("{}/vault_ffi.o", out_dir))
+        .status()
+        .expect("Falha ao invocar gcc para vault_ffi.c");
 
-        build.compile("sandbox");
+    assert!(status.success(), "Compilação de vault_ffi.c falhou");
 
-        // libs do Windows
-        println!("cargo:rustc-link-lib=userenv");
-        println!("cargo:rustc-link-lib=advapi32");
-        println!("cargo:rustc-link-lib=fwpuclnt");
-    }
+    /* ── 3. Criar libvault_security.a ────────────────────────────────── */
+    let status = Command::new("ar")
+        .args(["rcs"])
+        .arg(format!("{}/libvault_security.a", out_dir))
+        .arg(format!("{}/vault_security.o", out_dir))
+        .arg(format!("{}/vault_ffi.o", out_dir))
+        .status()
+        .expect("Falha ao invocar ar");
 
-    #[cfg(not(windows))]
-    {
-        // Apenas para evitar erros em ambientes de desenvolvimento não-Windows
-        println!("cargo:warning=Este projeto foi projetado para Windows.");
-    }
+    assert!(status.success(), "Criação de libvault_security.a falhou");
+
+    /* ── 4. Instruções de linkagem para o Cargo ─────────────────────── */
+    println!("cargo:rustc-link-search=native={}", out_dir);
+    println!("cargo:rustc-link-lib=static=vault_security");
+
+    /* OpenSSL e pthreads (dinâmicos) */
+    println!("cargo:rustc-link-lib=ssl");
+    println!("cargo:rustc-link-lib=crypto");
+    println!("cargo:rustc-link-lib=pthread");
+
+    /* Recompilar se os fontes C mudarem */
+    println!("cargo:rerun-if-changed=c_src/vault_security.c");
+    println!("cargo:rerun-if-changed=c_src/vault_ffi.c");
+    println!("cargo:rerun-if-changed=c_src/vault_ffi.h");
 }
