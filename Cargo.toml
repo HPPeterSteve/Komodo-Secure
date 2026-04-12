@@ -1,6 +1,6 @@
 [package]
 name = "komodo-secure"
-version = "0.7.0"
+version = "0.8.0"
 edition = "2021"
 build = "build.rs"
 
@@ -25,7 +25,7 @@ notify = "8.2.0"
 chrono = "0.4"
 ctrlc = "3.5.2"
 io = "0.0.2"
-duplex = "0.1"       # opcional, pode implementar manual
+duplex = "0.1"     
 
 # Crypto
 aes-gcm = "0.10"
@@ -60,3 +60,6 @@ windows = { version = "0.62.2", features = [
 [build-dependencies]
 cc = "1.1"
 winres = "0.1"
+
+[package.metadata.bundle]
+icon = ["img/favicon.ico"]
