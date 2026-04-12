@@ -37,7 +37,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use std::ffi::{c_char, c_int, c_uint, CStr, CString};
+use std::ffi::{c_char, c_int, c_uint, CString};
 
 #[cfg(target_os = "windows")]
 use windows::Win32::Security::PSID;

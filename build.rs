@@ -12,7 +12,6 @@
 
 use std::process::Command;
 
-
 fn main() {
     let out_dir = std::env::var("OUT_DIR").unwrap();
 
@@ -22,9 +21,6 @@ fn main() {
             "-O2",
             "-Wall",
             "-Wextra",
-            /* Não incluir main() do vault_security.c ao linkar como lib.
-             * Adicionamos -DVAULT_FFI_BUILD para que o vault_security.c
-             * possa condicionar o main() com #ifndef VAULT_FFI_BUILD */
             "-DVAULT_FFI_BUILD",
             "-fPIC",
             "-c",
