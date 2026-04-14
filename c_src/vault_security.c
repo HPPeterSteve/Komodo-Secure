@@ -177,6 +177,18 @@ int vault_init_security(void) {
     return (int)ERR_OK;
 }
 
+/*
+
+necessário desenvolver hash de senha
+exemplo:
+senha = 123456
+proximo passo:
+gerar salt aleatório (ex: "s@1tV@luT")
+juntar senha + salt → "123456s@1tV@luT"
+aplicar função hash (ex: SHA-256) → "e3b0c442
+
+*/
+
 int vault_create_ffi(
     const char *name,
     int vault_type,
@@ -184,7 +196,9 @@ int vault_create_ffi(
     const char *password) {
     
     if (!name || !path || !password) return (int)ERR_INVALID_PASSWORD;
+   // printf("Teste\n");
     if (g_monitor.vault_count >= MAX_VAULTS) return (int)ERR_SYSTEM;
+   // printf("Teste2\n");
     
     pthread_mutex_lock(&g_monitor.lock);
     
@@ -206,7 +220,12 @@ int vault_create_ffi(
     fprintf(stderr, "[VAULT] Criado: %s (ID: %u)\n", name, v->id);
     return (int)ERR_OK;
 }
-
+/*
+* Deleta um cofre pelo ID numérico.
+* @param id       ID do cofre
+* @param password Senha (obrigatória para cofres PROTECTED, NULL para NORMAL)
+* @return VaultError
+*/
 int vault_delete_ffi(uint32_t id, const char *password) {
     if (!password) return (int)ERR_INVALID_PASSWORD;
     
@@ -224,6 +243,14 @@ int vault_delete_ffi(uint32_t id, const char *password) {
     pthread_mutex_unlock(&g_monitor.lock);
     return (int)ERR_VAULT_NOT_FOUND;
 }
+/*
+
+* Renomeia um cofre.
+* @param id       ID do cofre
+* @param new_name Novo nome (validado: alfanumérico + _ + -)
+* @param password Senha (obrigatória para PROTECTED)
+* @return VaultError
+*/
 
 int vault_rename_ffi(uint32_t id, const char *new_name, const char *password) {
     if (!new_name || !password) return (int)ERR_INVALID_PASSWORD;
@@ -257,10 +284,17 @@ int vault_unlock_ffi(uint32_t id, const char *password) {
     pthread_mutex_unlock(&g_monitor.lock);
     return (int)ERR_VAULT_NOT_FOUND;
 }
+/*
+* Troca a senha de um cofre protegido.
+* @param id       ID do cofre
+* @param old_pass Senha atual
+* @param new_pass Nova senha (mín. 8 chars)
+* @return VaultError    
+*/
 
 int vault_change_password_ffi(uint32_t id, const char *old_pass, const char *new_pass) {
     if (!old_pass || !new_pass) return (int)ERR_INVALID_PASSWORD;
-    
+
     pthread_mutex_lock(&g_monitor.lock);
     
     Vault *v = vault_find_by_id(id);
@@ -273,7 +307,8 @@ int vault_change_password_ffi(uint32_t id, const char *old_pass, const char *new
     pthread_mutex_unlock(&g_monitor.lock);
     return (int)ERR_VAULT_NOT_FOUND;
 }
-
+//* Criptografa todos os arquivos do cofre com AES-256-CBC.
+//* Arquivos já com extensão .enc são ignorados.
 int vault_encrypt_ffi(uint32_t id, const char *password) {
     if (!password) return (int)ERR_INVALID_PASSWORD;
     
@@ -287,6 +322,7 @@ int vault_encrypt_ffi(uint32_t id, const char *password) {
     pthread_mutex_unlock(&g_monitor.lock);
     return (int)ERR_VAULT_NOT_FOUND;
 }
+
 
 int vault_decrypt_ffi(uint32_t id, const char *password) {
     if (!password) return (int)ERR_INVALID_PASSWORD;
@@ -327,7 +363,7 @@ int vault_resolve_ffi(uint32_t id, const char *password) {
     pthread_mutex_unlock(&g_monitor.lock);
     return (int)ERR_VAULT_NOT_FOUND;
 }
-
+//* Retorna o status numérico de um cofre.
 void vault_info_ffi(uint32_t id) {
     cmd_info(id);
 }

@@ -202,9 +202,9 @@ static VaultError catalog_load(void);
 static void       monitor_scan_vault(Vault *v);
 static void       alert_trigger(Vault *v, const char *reason);
 
-/* ═══════════════════════════════════════════════════════════════════════════
+/* 
  *  SECTION 1: LOGGING
- * ═══════════════════════════════════════════════════════════════════════════ */
+ *  */
 
 static const char *log_level_str(LogLevel lvl) {
     switch (lvl) {
@@ -273,9 +273,9 @@ static void log_init(void) {
     }
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
+/* 
  *  SECTION 2: ERROR HANDLING
- * ═══════════════════════════════════════════════════════════════════════════ */
+ *  */
 
 static const char *vault_strerror(VaultError err) {
     switch (err) {
@@ -316,9 +316,9 @@ static const char *vault_strerror(VaultError err) {
         } \
     } while (0)
 
-/* ═══════════════════════════════════════════════════════════════════════════
+/* 
  *  SECTION 3: ARGUMENT & STRING SANITISATION
- * ═══════════════════════════════════════════════════════════════════════════ */
+ *  */
 
 /*
  * Strip leading/trailing whitespace and surrounding quotes (" or ')
@@ -385,9 +385,9 @@ static VaultError validate_name(const char *name) {
     return ERR_OK;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
+/* 
  *  SECTION 4: CRYPTOGRAPHY
- * ═══════════════════════════════════════════════════════════════════════════ */
+ *  */
 
 /* SHA-256 of a buffer → hex string */
 static void sha256_hex(const uint8_t *data, size_t len, char out[HASH_HEX_LEN]) {
@@ -626,9 +626,9 @@ cleanup:
     return ret;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
+/* 
  *  SECTION 5: FILE HASH MAP
- * ═══════════════════════════════════════════════════════════════════════════ */
+ *  */
 
 static uint32_t hashmap_bucket(const char *s) {
     uint32_t h = 2166136261u;
@@ -673,9 +673,9 @@ static void hashmap_clear(FileHashMap *m) {
     m->count = 0;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
+/* 
  *  SECTION 6: CATALOG SERIALISATION
- * ═══════════════════════════════════════════════════════════════════════════ */
+ *  */
 
 /*
  * Binary catalog format (version 1):
@@ -875,9 +875,9 @@ static VaultError catalog_load(void) {
     return ERR_OK;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
+/* 
  *  SECTION 7: VAULT MANAGER
- * ═══════════════════════════════════════════════════════════════════════════ */
+ *  */
 
 static Vault *vault_find_by_id(uint32_t id) {
     for (uint32_t i = 0; i < g_catalog.count; i++)
@@ -1077,9 +1077,9 @@ static VaultError vault_change_password(uint32_t id, const char *old_pass,
     return catalog_save();
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
+/* 
  *  SECTION 8: FILE INTEGRITY MONITOR
- * ═══════════════════════════════════════════════════════════════════════════ */
+ *  */
 
 /*
  * Scan a vault directory: hash every file and compare with stored hashes.
@@ -1143,9 +1143,9 @@ static void monitor_scan_vault(Vault *v) {
     v->last_check = time(NULL);
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
+/* 
  *  SECTION 9: ALERT SYSTEM
- * ═══════════════════════════════════════════════════════════════════════════ */
+ *  */
 
 static void alert_trigger(Vault *v, const char *reason) {
     time_t now = time(NULL);
@@ -1218,9 +1218,9 @@ static VaultError alert_resolve(uint32_t id, const char *password) {
     return catalog_save();
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
+/* 
  *  SECTION 10: RULE ENGINE
- * ═══════════════════════════════════════════════════════════════════════════ */
+ *  */
 
 typedef struct {
     uint32_t vault_id;
@@ -1283,9 +1283,9 @@ static void rule_evaluate(Vault *v) {
     }
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
+/* 
  *  SECTION 11: INOTIFY MONITOR THREAD
- * ═══════════════════════════════════════════════════════════════════════════ */
+ *  */
 
 static void monitor_add_vault_watches(MonitorCtx *ctx) {
     for (uint32_t i = 0; i < ctx->catalog->count; i++) {
@@ -1295,7 +1295,7 @@ static void monitor_add_vault_watches(MonitorCtx *ctx) {
 
         v->inotify_wd = inotify_add_watch(
             ctx->inotify_fd, v->path,
-            IN_MODIFY | IN_CREATE | IN_DELETE | IN_MOVED_FROM | IN_MOVED_TO
+            IN_MODIFY | IN_CREATE | IN_DELETE | IN_MOVED_FROM | IN_MOVED_TO 
         );
 
         if (v->inotify_wd < 0)
@@ -1391,9 +1391,9 @@ static void *monitor_thread(void *arg) {
     return NULL;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
+/* 
  *  SECTION 12: SANDBOX (OPTIONAL, process-level)
- * ═══════════════════════════════════════════════════════════════════════════ */
+ *  */
 
 /*
  * vault_sandbox_open(): open a vault in a restricted child process.
@@ -1449,9 +1449,9 @@ static VaultError vault_sandbox_open(Vault *v, const char *password) {
     return ERR_OK;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
+/* 
  *  SECTION 13: INTERACTIVE CLI
- * ═══════════════════════════════════════════════════════════════════════════ */
+ *  */
 
 static char *read_password_silent(const char *prompt) {
     struct termios old_t, new_t;
@@ -1988,9 +1988,9 @@ static void process_command(char *line) {
     }
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
+/* 
  *  SECTION 14: INIT / SHUTDOWN / MAIN
- * ═══════════════════════════════════════════════════════════════════════════ */
+ *  */
 
 static volatile bool g_running = true;
 

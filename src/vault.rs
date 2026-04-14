@@ -158,9 +158,9 @@ fn c_err(code: c_int) -> Result<(), String> {
     }
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
+/* 
  *  WRAPPERS PÚBLICOS — core C via FFI
- * ═══════════════════════════════════════════════════════════════════════════ */
+ *  */
 
 /// Cria um cofre no core C.
 /// `vault_type`: "normal" | "protected"
@@ -273,9 +273,9 @@ pub fn vault_rule(
     c_err(code)
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
+/* 
  *  FUNÇÕES ORIGINAIS RUST — mantidas integralmente, sem renomear nada
- * ═══════════════════════════════════════════════════════════════════════════ */
+ *  */
 
 /// Função que o main.rs está tentando chamar (Windows AppContainer sandbox).
 pub fn run_in_sandbox(path: &str) {
