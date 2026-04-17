@@ -38,6 +38,8 @@
 #include <sys/wait.h>
 #include <pthread.h>
 #include <termios.h>
+#include <seccomp.h>
+#include <sys/syscall.h>
 
 #include <openssl/evp.h>
 #include <openssl/aes.h>
@@ -651,8 +653,10 @@ static FileEntry *hashmap_insert(FileHashMap *m, const char *filename) {
 
     e = calloc(1, sizeof(FileEntry));
     if (!e) return NULL;
+    // the old strlcpy is not safe because it
+    // doesn't guarantee null-termination if the input is too long
 
-    strncpy(e->filename, filename, NAME_MAX);
+    strlcpy(e->filename, filename, NAME_MAX);
     e->filename[NAME_MAX] = '\0';
     e->next = m->buckets[b];
     m->buckets[b] = e;
@@ -787,7 +791,7 @@ static VaultError catalog_load(void) {
     if (!fp) {
         if (errno == ENOENT) {
             vault_log(LOG_INFO, "No catalog found, starting fresh");
-            strncpy(g_catalog.category, "diamond", 31);
+            strlcpy(g_catalog.category, "diamond", 31);
             g_catalog.next_id = 1;
             return ERR_OK;
         }
@@ -900,7 +904,7 @@ static void vault_auto_name(char *out, size_t outsz) {
     do {
         snprintf(candidate, sizeof(candidate), "diamond_vault_%u", n++);
     } while (vault_find_by_name(candidate) != NULL);
-    strncpy(out, candidate, outsz - 1);
+    strlcpy(out, candidate, outsz - 1);
     out[outsz - 1] = '\0';
 }
 
@@ -960,8 +964,8 @@ static VaultError vault_create(const char *name_arg, VaultType type,
     v->last_check = v->created_at;
     v->inotify_wd = -1;
 
-    strncpy(v->name, name_buf, VAULT_NAME_MAX - 1);
-    strncpy(v->path, path_buf, VAULT_PATH_MAX - 1);
+    strlcpy(v->name, name_buf, VAULT_NAME_MAX - 1);
+    strlcpy(v->path, path_buf, VAULT_PATH_MAX - 1);
 
     if (type == VAULT_TYPE_PROTECTED) {
         err = auth_set_password(v, password);
@@ -1032,7 +1036,7 @@ static VaultError vault_rename(uint32_t id, const char *new_name, const char *pa
     }
 
     vault_log(LOG_AUDIT, "Vault RENAMED: id=%u '%s' → '%s'", v->id, v->name, n);
-    strncpy(v->name, n, VAULT_NAME_MAX - 1);
+    strlcpy(v->name, n, VAULT_NAME_MAX - 1);
     return catalog_save();
 }
 
@@ -1155,7 +1159,7 @@ static void alert_trigger(Vault *v, const char *reason) {
         v->alert.interval_idx    = 0;
     }
 
-    strncpy(v->alert.reason, reason, 255);
+    strlcpy(v->alert.reason, reason, 255);
     v->alert.reason[255] = '\0';
     v->status = VAULT_STATUS_ALERT;
 
@@ -1403,6 +1407,9 @@ static void *monitor_thread(void *arg) {
  * This is a lightweight sandbox using chroot + dropping privileges.
  * Full seccomp-bpf sandbox can be layered on top.
  */
+
+ 
+
 static VaultError vault_sandbox_open(Vault *v, const char *password) {
     if (!v) return ERR_INVALID_ARGS;
 
@@ -1447,6 +1454,40 @@ static VaultError vault_sandbox_open(Vault *v, const char *password) {
     vault_log(LOG_AUDIT, "Sandbox session for vault '%s' ended (exit %d)",
               v->name, WEXITSTATUS(status));
     return ERR_OK;
+}
+static VaultError vault_activate_seccomp(Vault *v) {
+
+    scmp_filter_ctx ctx = seccomp_init(SCMP_ACT_KILL);
+     if (!ctx) {
+        vault_log(LOG_ERROR, "seccomp_init failed, vault '%s'", v->name);
+                                                         return ERR_SYSTEM;
+    } 
+
+    if (prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) != 0) {
+        vault_log(LOG_ERROR, "prctl(PR_SET_NO_NEW_PRIVS) failed: %s%s", strerror(errno), v->name);
+        seccomp_release(ctx);
+        return ERR_SYSTEM;
+    }
+
+    vault_log(LOG_INFO, "Activating seccomp sandbox for vault '%s'", v->name);
+    seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(read), 0);
+    seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(write), 0);
+    seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(exit), 0);
+    seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(exit_group), 0);
+    seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(fstat), 0);
+    seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(openat), 1, 
+    SCMP_A1(SCMP_CMP_MASKED_EQ, O_ACCMODE, O_RDONLY));
+    seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(close), 0);
+
+    
+    if (seccomp_load(ctx) != 0) {
+        vault_log(LOG_ERROR, "seccomp_load failed, vault '%s'", v->name);
+        seccomp_release(ctx);
+        return ERR_SYSTEM;
+    }
+    seccomp_release(ctx);
+    return ERR_OK;
+
 }
 
 /* 
@@ -1790,7 +1831,7 @@ static void process_command(char *line) {
         char *name = (n >= 2) ? tokens[1] : NULL;
         char *path = (n >= 3) ? tokens[2] : NULL;
         char *type = (n >= 4) ? tokens[3] : NULL;
-
+        /// Parse vault type
         VaultType vtype = VAULT_TYPE_NORMAL;
         if (type && strcmp(type, "protected") == 0)
             vtype = VAULT_TYPE_PROTECTED;
@@ -1800,7 +1841,7 @@ static void process_command(char *line) {
         if (vtype == VAULT_TYPE_PROTECTED) {
             char *p1 = read_password_silent("  Set vault password: ");
             if (!p1 || !*p1) { printf("  Password required.\n"); return; }
-            strncpy(pass_buf, p1, MAX_PASS_LEN - 1);
+            strlcpy(pass_buf, p1, MAX_PASS_LEN - 1);
             char *p2 = read_password_silent("  Confirm password  : ");
             if (!p2 || strcmp(pass_buf, p2) != 0) {
                 printf("  Passwords do not match.\n");
@@ -1836,7 +1877,7 @@ static void process_command(char *line) {
         char pass_buf[MAX_PASS_LEN] = {0};
         if (v->type == VAULT_TYPE_PROTECTED) {
             pass = read_password_silent("  Enter password: ");
-            strncpy(pass_buf, pass, MAX_PASS_LEN - 1);
+            strlcpy(pass_buf, pass, MAX_PASS_LEN - 1);
             pass = pass_buf;
         }
 
@@ -1852,6 +1893,7 @@ static void process_command(char *line) {
     }
     /* ── rename ───────────────────────────────────── */
     else if (strcmp(cmd, "rename") == 0) {
+
         if (n < 3) { printf("  Usage: rename <id> <new_name>\n"); return; }
         uint32_t id = (uint32_t)atoi(tokens[1]);
         char *pass = NULL;
@@ -1860,7 +1902,7 @@ static void process_command(char *line) {
         Vault *v = vault_find_by_id(id);
         if (v && v->type == VAULT_TYPE_PROTECTED) {
             pass = read_password_silent("  Enter password: ");
-            strncpy(pass_buf, pass, MAX_PASS_LEN - 1);
+            strlcpy(pass_buf, pass, MAX_PASS_LEN - 1);
             pass = pass_buf;
         }
 
@@ -1877,7 +1919,7 @@ static void process_command(char *line) {
         uint32_t id = (uint32_t)atoi(tokens[1]);
         char *pass = read_password_silent("  Enter password: ");
         char pass_buf[MAX_PASS_LEN] = {0};
-        strncpy(pass_buf, pass, MAX_PASS_LEN - 1);
+        strlcpy(pass_buf, pass, MAX_PASS_LEN - 1);
 
         VaultError err = vault_unlock(id, pass_buf);
         explicit_bzero(pass_buf, sizeof(pass_buf));
@@ -1892,9 +1934,9 @@ static void process_command(char *line) {
         char old_buf[MAX_PASS_LEN] = {0}, new_buf[MAX_PASS_LEN] = {0}, cnf_buf[MAX_PASS_LEN] = {0};
         char *p;
 
-        p = read_password_silent("  Current password : "); strncpy(old_buf, p, MAX_PASS_LEN - 1);
-        p = read_password_silent("  New password     : "); strncpy(new_buf, p, MAX_PASS_LEN - 1);
-        p = read_password_silent("  Confirm new      : "); strncpy(cnf_buf, p, MAX_PASS_LEN - 1);
+        p = read_password_silent("  Current password : "); strlcpy(old_buf, p, MAX_PASS_LEN - 1);
+        p = read_password_silent("  New password     : "); strlcpy(new_buf, p, MAX_PASS_LEN - 1);
+        p = read_password_silent("  Confirm new      : "); strlcpy(cnf_buf, p, MAX_PASS_LEN - 1);
 
         if (strcmp(new_buf, cnf_buf) != 0) {
             printf("  Passwords do not match.\n");
@@ -1931,7 +1973,7 @@ static void process_command(char *line) {
         Vault *v = vault_find_by_id(id);
         if (v && v->type == VAULT_TYPE_PROTECTED) {
             pass = read_password_silent("  Enter password: ");
-            strncpy(pass_buf, pass, MAX_PASS_LEN - 1);
+            strlcpy(pass_buf, pass, MAX_PASS_LEN - 1);
             pass = pass_buf;
         }
         VaultError err = alert_resolve(id, pass);
@@ -1964,7 +2006,7 @@ static void process_command(char *line) {
         char pass_buf[MAX_PASS_LEN] = {0};
         if (v->type == VAULT_TYPE_PROTECTED) {
             pass = read_password_silent("  Enter password: ");
-            strncpy(pass_buf, pass, MAX_PASS_LEN - 1);
+            strlcpy(pass_buf, pass, MAX_PASS_LEN - 1);
             pass = pass_buf;
         }
         vault_sandbox_open(v, pass);
