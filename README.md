@@ -1,55 +1,20 @@
-# Komodo-Secure 🛡️ v0.6.0 (Professional Edition)
+# Komodo-Secure
 
-[![Download Komodo-Secure](https://img.shields.io/badge/Download-v0.6.0-orange?style=for-the-badge&logo=windows)](https://github.com/HPPeterSteve/Komodo-Secure/raw/main/komodo-secure%200.6.0(New%20Solo_Sec).exe)
-Verifique o arquivo:  (https://www.virustotal.com/gui/home/upload)
-O **Komodo-Secure** é uma ferramenta de segurança de alto nível para Windows, projetada para fornecer isolamento rigoroso de processos e proteção avançada de arquivos com overhead mínimo.
+## Introduction  
+Komodo-Secure est un projet dédié à la sécurité des systèmes programmés en bas niveau. Nous mettons l'accent sur les communautés Rust et C, en fournissant des outils et des ressources pour développer des applications sécurisées et performantes.
 
-## ✨ O que há de novo na v0.6.0
+## Objectif  
+Le but de Komodo-Secure est d'offrir des solutions robustes et adaptées aux défis uniques que présentent les langages bas niveau. Nous croyons fermement que la sécurité ne doit pas être une option, mais un élément fondamental du développement.
 
-Esta versão marca a transição para um **isolamento de nível profissional**, trazendo tecnologias usadas em navegadores modernos como Chrome e Edge para o seu terminal.
+### Pour la communauté Rust  
+Nous encourageons les développeurs Rust à adopter des pratiques de codage sécurisées, en se concentrant sur les fonctionnalités du langage qui favorisent la sécurité, telles que la gestion de la mémoire et l'absence de données corrompues.
 
-### 🔐 Sandbox Windows (Core/sandbox.c)
-*   **AppContainer Isolation**: Execução em um container seguro com SID próprio, bloqueando acesso a recursos do sistema por padrão.
-*   **Restricted Token**: Remoção completa de privilégios e grupos de administradores do processo sandboxed.
-*   **Untrusted Integrity Level**: O nível mais baixo de integridade possível, impedindo qualquer interação com objetos de maior privilégio.
-*   **Mitigation Policies**: Ativação de **DEP**, **ASLR forçado** e bloqueio de chamadas de sistema **Win32k** (Hardening de Kernel).
-*   **Desktop Isolado**: Lançamento em um desktop virtual separado para evitar keylogging e capturas de tela.
+### Pour la communauté C  
+Les développeurs C peuvent bénéficier de guides et d'exemples de code visant à renforcer la sécurité des applications. Nous soulignons l'importance de la validation des entrées et de la protection contre les débordements de tampon.
 
-### 🤖 Sub-sistema de Assistência (Path Assistant)
-*   **Fuzzy Matching**: Correção automática de erros de digitação em caminhos de arquivos usando a distância de Levenshtein.
-*   **Interface Interativa**: Sugestões inteligentes via CLI para garantir que você nunca perca o acesso aos seus cofres.
+## Resources
+- Documentation détaillée
+- Tutoriels pratiques
+- Outils de sécurité spécifiques
 
-## 🛠️ Funcionalidades Principais
-
-| Comando | Descrição |
-| :--- | :--- |
-| `create-vault` | Inicializa um diretório seguro para proteção de dados. |
-| `add-file` | Move arquivos para dentro do cofre protegido. |
-| `isolate-directory` | Aplica o **Isolamento Profissional** ao diretório escolhido. |
-| `encrypt` / `decrypt` | Proteção AES-256-GCM com senha segura. |
-| `secure-copy` | Copia e criptografa um arquivo para um cofre em uma única operação. |
-| `status` | Relatório detalhado de ocupação e integridade do cofre. |
-
-## 🚀 Como Executar
-
-### Pré-requisitos
-*   **Windows**: Windows 10/11 (para suporte total a AppContainer).
-*   **Linux**: Kernel moderno com suporte a Namespaces e Seccomp.
-
-### Compilação
-```bash
-# Para Windows (Recomendado)
-cargo build --release --target x86_64-pc-windows-gnu
-
-# Para Linux
-cargo build --release
-```
-
-## 🔐 Segurança e Criptografia
-*   **Algoritmo**: AES-256-GCM (Autenticada)
-*   **Derivação**: PBKDF2 (SHA-256)
-*   **Isolamento**: AppContainer (Win) / Namespaces + Seccomp (Linux)
-
----
-*Desenvolvido com foco em privacidade.*
-**Autor: Peter (HPPeterSteve)**
+Rejoignez-nous dans notre mission de rendre le développement bas niveau plus sûr et efficace.
