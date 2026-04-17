@@ -1,20 +1,51 @@
-# Komodo-Secure
+# Komodo Secure
 
-## Introduction  
-Komodo-Secure est un projet dédié à la sécurité des systèmes programmés en bas niveau. Nous mettons l'accent sur les communautés Rust et C, en fournissant des outils et des ressources pour développer des applications sécurisées et performantes.
+![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
+![License](https://img.shields.io/badge/license-MIT-blue)
 
-## Objectif  
-Le but de Komodo-Secure est d'offrir des solutions robustes et adaptées aux défis uniques que présentent les langages bas niveau. Nous croyons fermement que la sécurité ne doit pas être une option, mais un élément fondamental du développement.
+## Introdução
 
-### Pour la communauté Rust  
-Nous encourageons les développeurs Rust à adopter des pratiques de codage sécurisées, en se concentrant sur les fonctionnalités du langage qui favorisent la sécurité, telles que la gestion de la mémoire et l'absence de données corrompues.
+### Português:
 
-### Pour la communauté C  
-Les développeurs C peuvent bénéficier de guides et d'exemples de code visant à renforcer la sécurité des applications. Nous soulignons l'importance de la validation des entrées et de la protection contre les débordements de tampon.
+Komodo Secure é um projeto que combina as potências do Rust e da linguagem C, criando uma arquitetura híbrida única, que oferece segurança e desempenho. Nossos esforços se concentram na implementação de recursos avançados de segurança em ambientes de sistema operacional Windows e Linux.
 
-## Resources
-- Documentation détaillée
-- Tutoriels pratiques
-- Outils de sécurité spécifiques
+### English:
 
-Rejoignez-nous dans notre mission de rendre le développement bas niveau plus sûr et efficace.
+Komodo Secure is a project that merges the strengths of Rust and C language, creating a unique hybrid architecture that offers both security and performance. Our efforts focus on implementing advanced security features in Windows and Linux operating systems.
+
+## Table of Contents
+
+1. [Introduction](#introdução)
+2. [Architecture Overview](#architecture-overview)
+3. [Security Features](#security-features)
+4. [FFI Bindings Documentation](#ffi-bindings-documentation)
+5. [Cargo.toml Dependencies](#cargo-toml-dependencies)
+6. [Project Structure](#project-structure)
+7. [Cryptographic Implementation](#cryptographic-implementation)
+8. [Performance Metrics](#performance-metrics)
+9. [Installation Instructions](#installation-instructions)
+10. [Usage Examples](#usage-examples)
+11. [Community References](#community-references)
+12. [Code Examples](#code-examples)
+13. [Contributing Guidelines](#contributing-guidelines)
+14. [License](#license)
+15. [Author Attribution](#author-attribution)
+
+## Architecture Overview
+
+```plaintext
+                       +-------------+
+                       | Rust Layer  |
+                       +-------------+
+                             |
+                             | FFI bridge
+                             |
+                       +-------------+
+                       |    C Core   |
+                       +-------------+
+                             |
+                             | Windows/Linux
+                             |
+                     +------------------+
+                     | Windows/Linux Core |
+                     +------------------+
