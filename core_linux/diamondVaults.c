@@ -1597,9 +1597,10 @@ static void sandbox_apply_seccomp(void) {
         BPF_JUMP(BPF_JMP|BPF_JEQ|BPF_K, __NR_rt_sigaction,0,1), BPF_STMT(BPF_RET|BPF_K, SECCOMP_RET_ALLOW),
         BPF_JUMP(BPF_JMP|BPF_JEQ|BPF_K, __NR_rt_sigprocmask,0,1),BPF_STMT(BPF_RET|BPF_K,SECCOMP_RET_ALLOW),
         BPF_JUMP(BPF_JMP|BPF_JEQ|BPF_K, __NR_wait4,      0, 1), BPF_STMT(BPF_RET|BPF_K, SECCOMP_RET_ALLOW),
-        BPF_JUMP(BPF_JMP|BPF_JEQ|BPF_K, __NR_execve,     0, 1), BPF_STMT(BPF_RET|BPF_K, SECCOMP_RET_ALLOW),
-        BPF_JUMP(BPF_JMP|BPF_JEQ|BPF_K, __NR_clone,      0, 1), BPF_STMT(BPF_RET|BPF_K, SECCOMP_RET_ALLOW),
-        BPF_JUMP(BPF_JMP|BPF_JEQ|BPF_K, __NR_fork,       0, 1), BPF_STMT(BPF_RET|BPF_K, SECCOMP_RET_ALLOW),
+        /* Removidos fork/clone/execve para impedir escape da sandbox e execução não autorizada */
+        /* O processo filho deve realizar o execve ANTES de aplicar o seccomp se precisar rodar um shell */
+        /* No Komodo-Secure, o seccomp é aplicado APÓS o execve se fosse um wrapper, mas aqui ele roda no mesmo processo. */
+        /* Para máxima segurança, restringimos ao mínimo. */
         BPF_JUMP(BPF_JMP|BPF_JEQ|BPF_K, __NR_pipe2,      0, 1), BPF_STMT(BPF_RET|BPF_K, SECCOMP_RET_ALLOW),
         BPF_JUMP(BPF_JMP|BPF_JEQ|BPF_K, __NR_dup2,       0, 1), BPF_STMT(BPF_RET|BPF_K, SECCOMP_RET_ALLOW),
         BPF_JUMP(BPF_JMP|BPF_JEQ|BPF_K, __NR_getcwd,     0, 1), BPF_STMT(BPF_RET|BPF_K, SECCOMP_RET_ALLOW),
@@ -2053,11 +2054,18 @@ static void process_command(char *line) {
         VaultType vt=(type&&!strcmp(type,"protected"))?VAULT_TYPE_PROTECTED:VAULT_TYPE_NORMAL;
         char *password=NULL; char pbuf[MAX_PASS_LEN]={0};
         if (vt==VAULT_TYPE_PROTECTED) {
+            char p1_tmp[MAX_PASS_LEN] = {0};
             char *p1=read_password_silent("  Set password: ");
             if(!p1||!*p1){printf("  Password required.\n");return;}
-            strncpy(pbuf,p1,MAX_PASS_LEN-1);
+            strncpy(p1_tmp,p1,MAX_PASS_LEN-1);
             char *p2=read_password_silent("  Confirm: ");
-            if(!p2||strcmp(pbuf,p2)!=0){printf("  Mismatch.\n");explicit_bzero(pbuf,sizeof(pbuf));return;}
+            if(!p2||strcmp(p1_tmp,p2)!=0){
+                printf("  Mismatch.\n");
+                explicit_bzero(p1_tmp,sizeof(p1_tmp));
+                return;
+            }
+            strncpy(pbuf, p1_tmp, MAX_PASS_LEN-1);
+            explicit_bzero(p1_tmp, sizeof(p1_tmp));
             password=pbuf;
         }
         pthread_mutex_lock(&g_monitor.lock);
