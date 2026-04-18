@@ -213,9 +213,9 @@ fn prompt_password_opt(label: &str) -> Option<String> {
     if p.is_empty() { None } else { Some(p) }
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
+/* 
  *  DISPATCHER DE COMANDOS
- * ═══════════════════════════════════════════════════════════════════════════ */
+ *  */
 fn handle_command(parts: Vec<&str>) {
     match parts[0] {
 
@@ -705,6 +705,7 @@ fn handle_command(parts: Vec<&str>) {
                     eprintln!("{}", format!("✖ Erro: {}", e).red());
                 }
             }
+            
         }
 
         /* ── comando desconhecido — Levenshtein sugere o mais próximo ── */
@@ -731,16 +732,16 @@ fn handle_command(parts: Vec<&str>) {
     }
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
+/* 
  *  MAIN
- * ═══════════════════════════════════════════════════════════════════════════ */
+ *  */
 fn main() {
     let mut rl = DefaultEditor::new().unwrap();
     log::info("Aplicação iniciada.");
 
     println!(
         "{}",
-        "Komodo-Secure v0.7.0 iniciado! 🛡️ Sub-sistema de Assistência de Caminhos ATIVO.
+        "Komodo-Secure v0.8.0 iniciado!  Sub-sistema de Assistência de Caminhos ATIVO.
         todos os direitos reservados.
         Digite 'help'"
             .bright_green()
