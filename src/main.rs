@@ -705,6 +705,7 @@ fn handle_command(parts: Vec<&str>) {
                     eprintln!("{}", format!("✖ Erro: {}", e).red());
                 }
             }
+            
         }
 
         /* ── comando desconhecido — Levenshtein sugere o mais próximo ── */
