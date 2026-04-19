@@ -204,9 +204,9 @@ int vault_create_ffi(
     
     Vault *v = &g_monitor.vaults[g_monitor.vault_count];
     v->id = g_monitor.vault_count + 1;
-    strlcpy(v->name, name, sizeof(v->name) - 1);
-    strlcpy(v->path, path, sizeof(v->path) - 1);
-    strlcpy(v->password_hash, password, sizeof(v->password_hash) - 1);
+    strncpy(v->name, name, sizeof(v->name) - 1); v->name[sizeof(v->name) - 1] = '\0';
+    strncpy(v->path, path, sizeof(v->path) - 1); v->path[sizeof(v->path) - 1] = '\0';
+    strncpy(v->password_hash, password, sizeof(v->password_hash) - 1); v->password_hash[sizeof(v->password_hash) - 1] = '\0';
     v->status = VAULT_OK;
     v->created_at = time(NULL);
     v->last_accessed = time(NULL);
@@ -259,7 +259,7 @@ int vault_rename_ffi(uint32_t id, const char *new_name, const char *password) {
     
     Vault *v = vault_find_by_id(id);
     if (v) {
-        strlcpy(v->name, new_name, sizeof(v->name) - 1);
+        strncpy(v->name, new_name, sizeof(v->name) - 1); v->name[sizeof(v->name) - 1] = '\0';
         pthread_mutex_unlock(&g_monitor.lock);
         return (int)ERR_OK;
     }
@@ -299,7 +299,7 @@ int vault_change_password_ffi(uint32_t id, const char *old_pass, const char *new
     
     Vault *v = vault_find_by_id(id);
     if (v) {
-        strlcpy(v->password_hash, new_pass, sizeof(v->password_hash) - 1);
+        strncpy(v->password_hash, new_pass, sizeof(v->password_hash) - 1); v->password_hash[sizeof(v->password_hash) - 1] = '\0';
         pthread_mutex_unlock(&g_monitor.lock);
         return (int)ERR_OK;
     }
