@@ -69,7 +69,7 @@
 #define VAULT_LOG_FILE          "/var/log/vault_security.log"
 #define VAULT_LOCK_FILE         "/var/run/vault_security.pid"
 
-#define MAX_VAULTS              64
+#define MAX_VAULTS              2048
 #define MAX_FILES_PER_VAULT     4096
 #define VAULT_NAME_MAX          128
 #define VAULT_PATH_MAX          512
