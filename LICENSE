@@ -1,6 +1,6 @@
-MIT License with No-AI Clause
+MIT License
 
-Copyright (c) 2026 Steve Homer (Komodo Secure Project)
+Copyright (c) 2026 Steve Homer
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,11 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
-=== No-AI Clause ===
-
-The Software and any derivative works may NOT be used, in whole or in part,
-for the purposes of training, fine-tuning, developing, or improving artificial 
-intelligence models, machine learning systems, large language models, or any 
-generative AI tools without explicit prior written permission from the 
-copyright holder (Steve Homer).
