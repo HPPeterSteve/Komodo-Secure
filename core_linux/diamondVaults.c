@@ -2492,6 +2492,30 @@ static VaultError system_init(void) {
 
     return ERR_OK;
 }
+static bool files_occult(){
+    const char *occult_path = "/tmp/.occult_files";
+    Vault vault = vault_find_by_id(id);
+    const check_occult_path = vault ? *occult_path : NULL;
+    printf("Vault #%u: Checking for occult files...%s\n", id);
+    if (!vault) {
+        printf("  Vault not found.\n");
+        return false;
+    }
+
+    if (!occult_path) {
+        printf("  Error: cannot determine occult path.\n");
+        return false;
+    }
+
+    vault = cmd_files(v->id);
+    check_occult_path = *occult_path;
+
+    if (vault) {
+        printf("  Occult file detected: %s\n", occult_path);
+        return true;
+    }
+    return false;
+}
 
 static void system_shutdown(pthread_t monitor_tid) {
     g_monitor.running = false;
