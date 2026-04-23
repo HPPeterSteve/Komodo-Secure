@@ -311,7 +311,7 @@ static const char *vault_strerror(VaultError err) {
         case ERR_VAULT_EXISTS:    return "Vault already exists";
         case ERR_VAULT_NOT_FOUND: return "Vault not found";
         case ERR_PERM_DENIED:     return "Permission denied";
-        case ERR_CATALOG_FULL:    return "Catalog is full (max 64 vaults)";
+        case ERR_CATALOG_FULL:    return "Catalog is full (max 2048 vaults)";
         case ERR_PATH_INVALID:    return "Invalid path";
         case ERR_PASS_REQUIRED:   return "Password required for protected vault";
         case ERR_INTEGRITY:       return "File integrity violation";
@@ -422,6 +422,7 @@ static void sha256_hex(const uint8_t *data, size_t len, char out[HASH_HEX_LEN]) 
 
 /* SHA-256 of a file → hex string */
 static VaultError sha256_file(const char *path, char out[HASH_HEX_LEN]) {
+    
     FILE *fp = fopen(path, "rb");
     if (!fp) return ERR_IO;
 
@@ -1814,10 +1815,10 @@ static VaultError vault_sandbox_open(Vault *v, const char *password) {
         return ERR_OK;
     }
 
-    /* ════════════════════════════════════════════════
+    /*
      *  PROCESSO FILHO — SANDBOX
      *  A partir daqui: Fail Closed em tudo
-     * ════════════════════════════════════════════════ */
+     */
 
     /* ── [Camada 1] User Namespace ────────────────────────────────────────
      * Cria namespace de usuário próprio. O processo passa a ter UID 0
@@ -1879,8 +1880,8 @@ static VaultError vault_sandbox_open(Vault *v, const char *password) {
     printf("\n");
     printf("  ┌─────────────────────────────────────────────────────────┐\n");
     printf("  │     DIAMONDVAULT HARDENED SANDBOX v2                    │\n");
-    printf("  │     Vault : %-43s│\n", v->name);
-    printf("  │     Isolamento: UserNS + PivotRoot + Caps + Seccomp-BPF│\n");
+    printf("  │     Vault : %-43s│\n", v->name);                        
+    printf("  │     Isolamento: UserNS + PivotRoot + Caps + Seccomp-BPF │\n");
     printf("  │     Modo: Least Privilege · Deny by Default             │\n");
     printf("  │     Digite 'exit' para encerrar a sessão.               │\n");
     printf("  └─────────────────────────────────────────────────────────┘\n\n");
@@ -1997,7 +1998,7 @@ static void cmd_info(uint32_t id) {
     printf("  ────────────────────────────────────────────────────\n\n");
 }
 
-static void cmd_files(uint32_t id) {
+static bool cmd_files(uint32_t id) {
     Vault *v = vault_find_by_id(id);
     if (!v) { printf("  Vault #%u not found.\n", id); return; }
 
@@ -2007,7 +2008,9 @@ static void cmd_files(uint32_t id) {
 
     bool any = false;
     for (int b = 0; b < HASHMAP_BUCKETS; b++) {
-        for (FileEntry *e = v->hashmap.buckets[b]; e; e = e->next) {
+        for (FileEntry *e = v->hashmap.buckets[b];
+             e; 
+             e = e->next) {
             char tbuf[32];
             struct tm *tm = localtime(&e->last_seen);
             strftime(tbuf, sizeof(tbuf), "%Y-%m-%d %H:%M", tm);
@@ -2019,6 +2022,9 @@ static void cmd_files(uint32_t id) {
     }
     if (!any) printf("  (no files tracked)\n");
     printf("\n");
+
+    return any;
+
 }
 
 static void cmd_encrypt_vault(uint32_t id) {
@@ -2367,6 +2373,12 @@ static void process_command(char *line) {
     else if (strcmp(cmd, "scan") == 0) {
         if (n < 2) { printf("  Usage: scan <id>\n"); return; }
         cmd_scan((uint32_t)atoi(tokens[1]));
+        const char *alert_msg = vault_get_alert_message((uint32_t)atoi(tokens[1]));
+        if (!alert_msg) {
+            printf("  No alerts for this vault.\n");
+        } else {
+            printf("  ALERT: %s\n", alert_msg);
+        }
     }
     /* ── resolve ──────────────────────────────────── */
     else if (strcmp(cmd, "resolve") == 0) {
@@ -2492,25 +2504,26 @@ static VaultError system_init(void) {
 
     return ERR_OK;
 }
+
 static bool files_occult(){
     const char *occult_path = "/tmp/.occult_files";
-    Vault vault = vault_find_by_id(id);
-    const check_occult_path = vault ? *occult_path : NULL;
-    printf("Vault #%u: Checking for occult files...%s\n", id);
+    Vault *v = vault_find_by_id(uint32_t id);
+    const char *check_occult_path = vault ? occult_path : NULL;
+    printf("Vault #%u: Checking for occult files...\n", id);
+
     if (!vault) {
         printf("  Vault not found.\n");
         return false;
     }
-
     if (!occult_path) {
         printf("  Error: cannot determine occult path.\n");
         return false;
     }
-
-    vault = cmd_files(v->id);
-    check_occult_path = *occult_path;
-
-    if (vault) {
+    if vault = cmd_files(v->id) {
+        printf("Arquivos ocultos detectados no vault '%s'!\n", v->name);
+        return true;
+    }
+    if (access(check_occult_path, F_OK) == 0) {
         printf("  Occult file detected: %s\n", occult_path);
         return true;
     }
@@ -2543,22 +2556,6 @@ static void system_shutdown(pthread_t monitor_tid) {
     }
 }
 
-static void print_banner(void) {
-    printf("\n");
-    printf("  ╔══════════════════════════════════════════════════════════════╗\n");
-    printf("  ║                                                              ║\n");
-    printf("  ║   ██╗   ██╗ █████╗ ██╗   ██╗██╗  ████████╗                 ║\n");
-    printf("  ║   ██║   ██║██╔══██╗██║   ██║██║  ╚══██╔══╝                 ║\n");
-    printf("  ║   ██║   ██║███████║██║   ██║██║     ██║                     ║\n");
-    printf("  ║   ╚██╗ ██╔╝██╔══██║██║   ██║██║     ██║                     ║\n");
-    printf("  ║    ╚████╔╝ ██║  ██║╚██████╔╝███████╗██║                     ║\n");
-    printf("  ║     ╚═══╝  ╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝                    ║\n");
-    printf("  ║          SECURITY SYSTEM  –  Diamond Catalog                ║\n");
-    printf("  ║      AES-256 | SHA-256 | PBKDF2 | inotify | pthreads       ║\n");
-    printf("  ╚══════════════════════════════════════════════════════════════╝\n");
-    printf("  Type 'help' for available commands.\n\n");
-}
-
 int main(int argc, char *argv[]) {
     /* Optional: --verbose flag */
     for (int i = 1; i < argc; i++) {
@@ -2585,7 +2582,6 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    print_banner();
 
     /* Interactive REPL */
     char line[1024];

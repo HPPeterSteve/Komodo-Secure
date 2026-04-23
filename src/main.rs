@@ -24,7 +24,6 @@
  * Nenhum bool, variável ou função existente foi renomeado.
  */
 
-mod cli;
 mod vault;
 mod crypto;
 mod log;
@@ -453,7 +452,9 @@ fn handle_command(parts: Vec<&str>) {
 
         "exit" => {
             log::info("Aplicação encerrada pelo usuário.");
+            log::info("Fechando arquivos de log.");
             println!("{}", "Saindo...".yellow());
+            log::close();
             std::process::exit(0);
         }
 

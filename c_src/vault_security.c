@@ -135,13 +135,15 @@ static void cmd_list(void) {
     pthread_mutex_unlock(&g_monitor.lock);
 }
 
-static void cmd_files(uint32_t id) {
+static bool cmd_files(uint32_t id) {
     pthread_mutex_lock(&g_monitor.lock);
     Vault *v = vault_find_by_id(id);
     if (v) {
         printf("[VAULT FILES] %s (%d files)\n", v->name, v->file_count);
     }
     pthread_mutex_unlock(&g_monitor.lock);
+
+    return true; // Stub: sempre retorna true (arquivos ocultos detectados)
 }
 
 static int vault_sandbox_open(Vault *v, const char *password) {
